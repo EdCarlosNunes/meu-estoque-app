@@ -339,12 +339,17 @@ function atualizarAnalytics(itens) {
                 nome: item.nome, // Mantém a digitação original para o display
                 quantidade: 0,
                 menorDiasParaVencer: st.dias,
-                custoTotal: 0
+                custoTotal: 0,
+                pesoTotal: 0, // NOVO: Correção de bug no render de metas
+                unidade: item.unidade || 'Kg'
             };
         }
         
         itensAgrupados[nomeUpper].quantidade += 1;
         itensAgrupados[nomeUpper].custoTotal += Number(item.precoUnitario);
+        
+        let iPeso = Number(item.peso) || 0;
+        itensAgrupados[nomeUpper].pesoTotal += iPeso;
         
         // Mantém o vencimento mais crítico (menor dia) para o grupo
         if (st.dias < itensAgrupados[nomeUpper].menorDiasParaVencer) {
