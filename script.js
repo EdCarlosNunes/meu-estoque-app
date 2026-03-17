@@ -314,28 +314,46 @@ function atualizarAnalytics(itens) {
     let valorTotal = 0;
     let tensEmRisco = 0;
 
-    const dataAnalise = itens.map(item => {
+    // Agrupamento de itens por nome para os gráficos
+    const itensAgrupados = {};
+
+    itens.forEach(item => {
         valorTotal += Number(item.precoUnitario);
         const st = classificarStatus(item.validade);
         if (st.classe !== 'status-ok') tensEmRisco++;
         
-        return {
-            nome: item.nome,
-            diasParaVencer: st.dias,
-            custo: Number(item.precoUnitario)
-        };
+        const nomeUpper = item.nome.toUpperCase(); // Normalizar maiúsculo/minúsculo
+        
+        if (!itensAgrupados[nomeUpper]) {
+            itensAgrupados[nomeUpper] = {
+                nome: item.nome, // Mantém a digitação original para o display
+                quantidade: 0,
+                menorDiasParaVencer: st.dias,
+                custoTotal: 0
+            };
+        }
+        
+        itensAgrupados[nomeUpper].quantidade += 1;
+        itensAgrupados[nomeUpper].custoTotal += Number(item.precoUnitario);
+        
+        // Mantém o vencimento mais crítico (menor dia) para o grupo
+        if (st.dias < itensAgrupados[nomeUpper].menorDiasParaVencer) {
+            itensAgrupados[nomeUpper].menorDiasParaVencer = st.dias;
+        }
     });
 
-    // Atualizar no HTML
+    // Atualizar no HTML as métricas numéricas
     document.getElementById('metricValorInvestido').textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('metricTotalUnidades').textContent = itens.length;
     document.getElementById('metricItensAtencao').textContent = tensEmRisco;
 
-    // 2. Gráfico 1: Vencimento (Os 5 produtos mais urgentes)
-    const urgentes = [...dataAnalise].sort((a,b) => a.diasParaVencer - b.diasParaVencer).slice(0, 5);
+    // 2. Gráfico 1: Prazos de Validade (Visão Agrupada x Dias pra vencer)
+    // Transforma o objeto agrupado num Array e ordena pelos que vão vencer primeiro
+    const dadosGraficoVencimento = Object.values(itensAgrupados).sort((a,b) => a.menorDiasParaVencer - b.menorDiasParaVencer);
     
-    const labelsVencimento = urgentes.map(u => u.nome);
-    const dataVencimento = urgentes.map(u => u.diasParaVencer);
+    // Rótulos no formato: Nome do Produto (Qtdx)
+    const labelsVencimento = dadosGraficoVencimento.map(u => `${u.nome} (${u.quantidade}x)`);
+    const dataVencimento = dadosGraficoVencimento.map(u => u.menorDiasParaVencer);
     const coresVencimento = dataVencimento.map(d => d < 0 ? '#ff3b30' : (d <= 30 ? '#ffcc00' : '#34c759'));
 
     if (chartValidadeInstance) chartValidadeInstance.destroy();
@@ -346,53 +364,64 @@ function atualizarAnalytics(itens) {
         data: {
             labels: labelsVencimento,
             datasets: [{
-                label: 'Dias para Vencer',
+                label: 'Dias para Vencer (Lote mais próximo)',
                 data: dataVencimento,
                 backgroundColor: coresVencimento,
-                borderRadius: 6
+                borderRadius: 4
             }]
         },
         options: {
             indexAxis: 'y', // Barras horizontais
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-                title: { display: true, text: 'Prazo de Validade (Itens Urgentes)' }
+                title: { display: true, text: 'Prazo de Validade por Produto' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let val = context.raw;
+                            return val < 0 ? `Vencido há ${Math.abs(val)} dias` : `Vence em ${val} dias`;
+                        }
+                    }
+                }
             }
         }
     });
 
-    // 3. Gráfico 2: Reposição (Contagem de itens por nome)
-    const contagemMapeada = {};
-    dataAnalise.forEach(item => {
-        if (!contagemMapeada[item.nome]) contagemMapeada[item.nome] = 0;
-        contagemMapeada[item.nome] += 1;
-    });
-
-    const labelsReposicao = Object.keys(contagemMapeada);
-    const dataReposicao = Object.values(contagemMapeada);
+    // 3. Gráfico 2: Volume de Estoque (Gráfico de Colunas em vez de Pizza)
+    // Ordenar pelo produto que tem mais volume
+    const dadosGraficoVolume = Object.values(itensAgrupados).sort((a,b) => b.quantidade - a.quantidade);
+    
+    const labelsVolume = dadosGraficoVolume.map(u => u.nome);
+    const dataVolume = dadosGraficoVolume.map(u => u.quantidade);
 
     if (chartReposicaoInstance) chartReposicaoInstance.destroy();
 
     const ctxRep = document.getElementById('reposicaoChart').getContext('2d');
     chartReposicaoInstance = new Chart(ctxRep, {
-        type: 'doughnut',
+        type: 'bar', // Mudou de 'doughnut' para 'bar'
         data: {
-            labels: labelsReposicao,
+            labels: labelsVolume,
             datasets: [{
-                data: dataReposicao,
-                backgroundColor: ['#0A84FF', '#34C759', '#FF9500', '#5E5CE6', '#FF2D55', '#AF52DE'],
-                borderWidth: 0,
-                hoverOffset: 8
+                label: 'Unidades em Estoque',
+                data: dataVolume,
+                backgroundColor: '#0A84FF', // Azul padrão iOS
+                borderRadius: 4
             }]
         },
         options: {
-            plugins: {
-                title: { display: true, text: 'Distribuição Mapeada (Volume)' },
-                legend: { position: 'bottom' }
-            },
-            cutout: '70%',
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Volume Físico do Estoque' },
+                legend: { display: false } // Esconde a legenda desnecessária num gráfico de 1 cor
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 } // Força a escala a mostrar números inteiros (1, 2, 3 itens...)
+                }
+            }
         }
     });
 }
