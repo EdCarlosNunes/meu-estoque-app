@@ -27,9 +27,9 @@ const authError = document.getElementById('authError');
 const userEmailDisplay = document.getElementById('userEmailDisplay');
 const btnLogout = document.getElementById('btnLogout');
 
-// Auth Tabs
-const tabLogin = document.getElementById('tabLogin');
-const tabRegister = document.getElementById('tabRegister');
+// Auth Tabs (from Inputs)
+const tabLoginInput = document.getElementById('tabLoginInput');
+const tabRegisterInput = document.getElementById('tabRegisterInput');
 
 const formCadastro = document.getElementById('cadastroForm');
 const btnSalvarEstoque = document.getElementById('btnSalvarEstoque');
@@ -56,18 +56,14 @@ document.getElementById('dataValidade').value = hoje;
 // 1. AUTHENTICATION (Login / Cadastro explícito)
 // ==========================================
 
-tabLogin.addEventListener('click', () => {
+tabLoginInput.addEventListener('change', () => {
     isLoginMode = true;
-    tabLogin.classList.add('active');
-    tabRegister.classList.remove('active');
     btnAcaoAuth.textContent = 'Entrar no Sistema';
     authError.textContent = '';
 });
 
-tabRegister.addEventListener('click', () => {
+tabRegisterInput.addEventListener('change', () => {
     isLoginMode = false;
-    tabRegister.classList.add('active');
-    tabLogin.classList.remove('active');
     btnAcaoAuth.textContent = 'Criar Conta Nova';
     authError.textContent = '';
 });
@@ -175,17 +171,17 @@ async function carregarEstoque() {
                 const status = classificarStatus(item.validade);
 
                 tr.innerHTML = `
-                    <td>${item.nome}</td>
+                    <td><strong>${item.nome}</strong></td>
                     <td>${item.peso}</td>
-                    <td><strong>${formataDataBR(item.validade)}</strong></td>
-                    <td>R$ ${Number(item.precoUnitario).toFixed(2)}</td>
-                    <td><span class="status-badge ${status.classe}">${status.texto}</span></td>
-                    <td><button class="btn-baixa" data-id="${item.id}">🗑️ Excluir</button></td>
+                    <td>${formataDataBR(item.validade)}</td>
+                    <td>R$ ${Number(item.precoUnitario).toFixed(2).replace('.', ',')}</td>
+                    <td><span class="badge ${status.classe}">${status.texto}</span></td>
+                    <td><button class="btn-delete" data-id="${item.id}">Apagar</button></td>
                 `;
                 estoqueBody.appendChild(tr);
             });
 
-            document.querySelectorAll('.btn-baixa').forEach(btn => {
+            document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => removerItem(e.target.getAttribute('data-id')));
             });
 
@@ -339,21 +335,24 @@ function atualizarAnalytics(itens) {
 
     const ctxRep = document.getElementById('reposicaoChart').getContext('2d');
     chartReposicaoInstance = new Chart(ctxRep, {
-        type: 'doughnut', // Gráfico circular estilo iOS
+        type: 'doughnut',
         data: {
             labels: labelsReposicao,
             datasets: [{
                 data: dataReposicao,
-                backgroundColor: ['#007aff', '#34c759', '#ff9500', '#5856d6', '#ff2d55', '#af52de'],
-                borderWidth: 2,
-                borderColor: '#ffffff'
+                backgroundColor: ['#0A84FF', '#34C759', '#FF9500', '#5E5CE6', '#FF2D55', '#AF52DE'],
+                borderWidth: 0,
+                hoverOffset: 8
             }]
         },
         options: {
-            responsive: true,
             plugins: {
-                title: { display: true, text: 'Distribuição do Estoque (Volumes)' }
-            }
+                title: { display: true, text: 'Distribuição Mapeada (Volume)' },
+                legend: { position: 'bottom' }
+            },
+            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: false
         }
     });
 }
