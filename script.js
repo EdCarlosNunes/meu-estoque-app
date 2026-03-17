@@ -711,132 +711,98 @@ function atualizarAnalytics(itens) {
             <td id="table_meta_${cardId}">${hasMetaUI}</td>
             <td>${progressHTML}</td>
             <td style="text-align: right;">
-                <button class="btn-configurar-meta" data-configid="${cardId}" style="background: rgba(10, 132, 255, 0.1); color: var(--sys-blue); border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">⚙️ Configurar</button>
+                <button class="btn-editar-meta" data-configid="${cardId}" data-nomeupper="${nomeUpper}" data-unidade="${grupo.unidade}" data-nome="${grupo.nome}" data-meta="${metaAtual}" style="background: rgba(10, 132, 255, 0.1); color: var(--sys-blue); border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">✏️ Editar Meta</button>
             </td>
         `;
         metasSummaryBody.appendChild(trMain);
-        
-        // 2. Linha Oculta de Configuração
-        const trConfig = document.createElement('tr');
-        trConfig.id = `config_row_${cardId}`;
-        trConfig.style.display = 'none';
-        trConfig.style.backgroundColor = 'rgba(0,0,0,0.02)';
-        trConfig.innerHTML = `
-            <td colspan="5" style="padding: 15px 20px; border-top: none;">
-                <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; background: white; padding: 15px; border-radius: var(--radius-sm); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                    <div class="meta-input-row" style="margin-bottom: 0; min-width: 200px; flex: 1;">
-                        <label>Defina a Meta (Total Desejado):</label>
-                        <div class="meta-input-group">
-                            <input type="number" class="input-meta" id="input_meta_${cardId}" value="${metaAtual}" min="0" step="0.5">
-                            <span>${grupo.unidade}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="meta-suggestions" style="border: none; padding-top: 0; margin-top: 0; flex: 2; min-width: 250px;">
-                        <p style="margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--label-secondary);">💡 Sugestões Rápidas:</p>
-                        <div class="meta-sug-buttons">
-                            <button class="btn-sugestao" data-target="${cardId}" data-val="${sug1}" style="border: 1px solid rgba(0,0,0,0.05);">1 Ano (+${formatarMedida(sug1, grupo.unidade)})</button>
-                            <button class="btn-sugestao" data-target="${cardId}" data-val="${sug2}" style="border: 1px solid rgba(0,0,0,0.05);">2 Anos (+${formatarMedida(sug2, grupo.unidade)})</button>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <button class="btn-salvar-meta" data-nomeupper="${nomeUpper}" data-cardid="${cardId}" style="background-color: var(--sys-blue); color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; height: 42px; display: flex; align-items: center; gap: 5px; transition: transform 0.2s;">
-                            💾 Salvar Meta
-                        </button>
-                    </div>
-                </div>
-            </td>
-        `;
-        metasSummaryBody.appendChild(trConfig);
     });
 
     // Eventos da Tabela Inline
     metasSummaryBody.addEventListener('click', (e) => {
-        
-        // Evento 0: Abrir Configuração
-        if(e.target.classList.contains('btn-configurar-meta')) {
-             const cardId = e.target.getAttribute('data-configid');
-             const row = document.getElementById('config_row_' + cardId);
-             if(row) {
-                 const isClosed = row.style.display === 'none';
-                 // Fecha todas as outras configurações abertas (comportamento de acordeão)
-                 document.querySelectorAll('[id^="config_row_"]').forEach(r => r.style.display = 'none');
-                 document.querySelectorAll('.btn-configurar-meta').forEach(b => {
-                     b.innerHTML = '⚙️ Configurar';
-                     b.style.background = 'rgba(10, 132, 255, 0.1)';
-                 });
+        if(e.target.classList.contains('btn-editar-meta')) {
+            const btn = e.target;
+            const cardId = btn.getAttribute('data-configid');
+            const nomeUpper = btn.getAttribute('data-nomeupper');
+            const nome = btn.getAttribute('data-nome');
+            const unidade = btn.getAttribute('data-unidade');
+            const metaAtualFloat = parseFloat(btn.getAttribute('data-meta')) || 0;
+            
+            let resposta = prompt(`Defina a meta ideal para ${nome} (em ${unidade}):\n(Para remover a meta, deixe em branco e dê OK)`, metaAtualFloat > 0 ? metaAtualFloat : '');
+            
+            if (resposta !== null && resposta.trim() !== '') {
+                const novaMeta = parseFloat(resposta.replace(',', '.'));
+                if (!isNaN(novaMeta) && novaMeta >= 0) {
+                    // Salvar
+                    let metas = JSON.parse(localStorage.getItem(metasStorageKey)) || {};
+                    metas[nomeUpper] = novaMeta;
+                    localStorage.setItem(metasStorageKey, JSON.stringify(metas));
+                    
+                    // Atualizar botão
+                    btn.setAttribute('data-meta', novaMeta);
+                    
+                    const grupo = itensAgrupados[nomeUpper];
+                    const pesoTotalAtual = grupo ? grupo.pesoTotal : 0;
+                    
+                    let pct = novaMeta > 0 ? Math.min((pesoTotalAtual / novaMeta) * 100, 100) : 0;
+                    let corBarra = 'var(--sys-orange)';
+                    if(pct >= 100) corBarra = 'var(--sys-green)';
+                    else if (pct >= 50) corBarra = 'var(--sys-blue)';
+                    
+                    const tableMeta = document.getElementById(`table_meta_${cardId}`);
+                    if(novaMeta > 0) {
+                         tableMeta.innerHTML = formatarMedida(novaMeta, unidade);
+                    } else {
+                         tableMeta.innerHTML = `<span style="color:var(--label-secondary); font-size: 0.85em; font-weight: normal;">Sem Meta 🎯</span>`;
+                         corBarra = 'var(--label-tertiary)';
+                    }
+                    
+                    const tableFill = document.getElementById(`table_fill_${cardId}`);
+                    const tableStatus = document.getElementById(`table_status_${cardId}`);
+                    if(tableFill) {
+                        tableFill.style.width = `${pct}%`;
+                        tableFill.style.backgroundColor = corBarra;
+                    }
+                    if(tableStatus) {
+                        tableStatus.textContent = novaMeta > 0 ? `${pct.toFixed(0)}%` : '--';
+                        tableStatus.style.color = novaMeta > 0 ? corBarra : 'var(--label-secondary)';
+                    }
+                    
+                    btn.innerHTML = '✅ Salvo!';
+                    btn.style.background = 'rgba(52, 199, 89, 0.1)';
+                    setTimeout(() => { 
+                         btn.innerHTML = '✏️ Editar Meta'; 
+                         btn.style.background = 'rgba(10, 132, 255, 0.1)';
+                    }, 2000);
+                } else {
+                    alert("A meta precisa ser um número positivo.");
+                }
+            } else if (resposta !== null && resposta.trim() === '') {
+                 // apagar meta
+                 let metas = JSON.parse(localStorage.getItem(metasStorageKey)) || {};
+                 metas[nomeUpper] = 0;
+                 localStorage.setItem(metasStorageKey, JSON.stringify(metas));
+                 btn.setAttribute('data-meta', 0);
                  
-                 if(isClosed) {
-                     row.style.display = 'table-row';
-                     e.target.innerHTML = '❌ Fechar';
-                     e.target.style.background = 'rgba(255, 59, 48, 0.1)'; // sys-red light
-                 }
-             }
-        }
-        
-        // Evento 1: Salvar Meta Manualmente
-        if (e.target.classList.contains('btn-salvar-meta') || e.target.closest('.btn-salvar-meta')) {
-            const btnSalvar = e.target.classList.contains('btn-salvar-meta') ? e.target : e.target.closest('.btn-salvar-meta');
-            const nomeUpper = btnSalvar.getAttribute('data-nomeupper');
-            const cardId = btnSalvar.getAttribute('data-cardid');
-            const inputElement = document.getElementById('input_meta_' + cardId);
-            const novaMeta = Number(inputElement.value);
-            
-            let metas = JSON.parse(localStorage.getItem(metasStorageKey)) || {};
-            metas[nomeUpper] = novaMeta;
-            localStorage.setItem(metasStorageKey, JSON.stringify(metas));
-            
-            const grupo = itensAgrupados[nomeUpper];
-            const pesoTotalAtual = grupo ? grupo.pesoTotal : 0;
-            
-            // Re-render UI na Tabela para esta linha!
-            let pct = novaMeta > 0 ? Math.min((pesoTotalAtual / novaMeta) * 100, 100) : 0;
-            let corBarra = 'var(--sys-orange)';
-            if(pct >= 100) corBarra = 'var(--sys-green)';
-            else if (pct >= 50) corBarra = 'var(--sys-blue)';
-            
-            const tableMeta = document.getElementById(`table_meta_${cardId}`);
-            if(novaMeta > 0) {
-                 tableMeta.innerHTML = formatarMedida(novaMeta, grupo.unidade);
-            } else {
+                 const tableMeta = document.getElementById(`table_meta_${cardId}`);
                  tableMeta.innerHTML = `<span style="color:var(--label-secondary); font-size: 0.85em; font-weight: normal;">Sem Meta 🎯</span>`;
-                 corBarra = 'var(--label-tertiary)';
-            }
-            
-            const tableFill = document.getElementById(`table_fill_${cardId}`);
-            const tableStatus = document.getElementById(`table_status_${cardId}`);
-            if(tableFill) {
-                tableFill.style.width = `${pct}%`;
-                tableFill.style.backgroundColor = corBarra;
-            }
-            if(tableStatus) {
-                tableStatus.textContent = novaMeta > 0 ? `${pct.toFixed(0)}%` : '--';
-                tableStatus.style.color = novaMeta > 0 ? corBarra : 'var(--label-secondary)';
-            }
-            
-            // Fecha a linha de config e reseta botão
-            document.getElementById('config_row_' + cardId).style.display = 'none';
-            const btnConfig = document.querySelector(`.btn-configurar-meta[data-configid="${cardId}"]`);
-            if(btnConfig) {
-                 btnConfig.innerHTML = '✅ Salvo!';
-                 btnConfig.style.background = 'rgba(52, 199, 89, 0.1)'; // green
+                 
+                 const tableFill = document.getElementById(`table_fill_${cardId}`);
+                 const tableStatus = document.getElementById(`table_status_${cardId}`);
+                 if(tableFill) {
+                    tableFill.style.width = `0%`;
+                    tableFill.style.backgroundColor = 'var(--label-tertiary)';
+                 }
+                 if(tableStatus) {
+                    tableStatus.textContent = '--';
+                    tableStatus.style.color = 'var(--label-secondary)';
+                 }
+                 
+                 btn.innerHTML = '🗑️ Removido';
+                 btn.style.background = 'rgba(255, 59, 48, 0.1)'; // red
                  setTimeout(() => { 
-                     btnConfig.innerHTML = '⚙️ Configurar'; 
-                     btnConfig.style.background = 'rgba(10, 132, 255, 0.1)';
+                     btn.innerHTML = '✏️ Editar Meta'; 
+                     btn.style.background = 'rgba(10, 132, 255, 0.1)';
                  }, 2000);
-            }
-        }
-        
-        // Evento 2: Clicar para Sugestão Automática
-        if (e.target.classList.contains('btn-sugestao')) {
-            const targetId = e.target.getAttribute('data-target');
-            const valorSugerido = e.target.getAttribute('data-val');
-            const inputMeta = document.getElementById('input_meta_' + targetId);
-            if(inputMeta) {
-                inputMeta.value = valorSugerido;
-                // Como não usamos mais evento 'input' na tabela para auto-save, não precisamos despachar o evento.
-                // O usuário ainda precisa clicar em "Salvar Meta" após clicar na sugestão.
             }
         }
     });
