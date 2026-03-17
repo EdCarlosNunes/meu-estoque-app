@@ -90,8 +90,10 @@ authForm.addEventListener('submit', async (e) => {
             authError.textContent = 'Este e-mail já possui uma conta.';
         } else if (error.code === 'auth/weak-password') {
             authError.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+            authError.textContent = '⚠️ Erro: Autenticação por E-mail está desativada no Firebase!';
         } else {
-            authError.textContent = 'Erro ao conectar. Tente novamente.';
+            authError.textContent = `Erro Firebase: ${error.code} - ${error.message}`;
         }
     } finally {
         btnAcaoAuth.disabled = false;
