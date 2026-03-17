@@ -17,7 +17,7 @@ O **Banco de Dados de Comida** é uma aplicação web de página única (SPA) de
 
 - 🍏 **Design Premium (Glassmorphism):** Interface translúcida, cantos arredondados e tipografia nativa (`-apple-system`).
 - 📦 **Cadastro Inteligente:** Sistema em loop que permite inserir rapidamente "X" unidades de um produto e o banco de dados desmembra automaticamente, gerando IDs únicos para baixa unitária e calculando o preço fracionado.
-- ⚡ **Sem Banco de Dados (Serverless):** Funciona 100% no navegador. Todo o seu estoque é salvo de forma persistente e segura no `localStorage` do seu próprio equipamento.
+- ☁️ **Sincronização em Nuvem (Firebase):** Sistema com Autenticação de Usuário e banco de dados real-time (Firestore). Cada conta possui seu estoque individual e persistente, acessível de qualquer dispositivo.
 - 🚥 **Alertas Visuais:** O grid de estoque identifica automaticamente e colore de forma suave (tons pastel) produtos com status "OK" (Verde), "Atenção - Vence em até 30 dias" (Amarelo) e "Vencido" (Vermelho).
 - 📱 **Responsivo:** Layout em painéis que se adapta para telas de celulares, tablets ou desktops.
 
@@ -31,7 +31,8 @@ Acesse a aplicação completa funcionando direto do seu navegador, sem precisar 
 
 - **HTML5:** Estruturação semântica.
 - **CSS3 Moderno:** Variáveis nativas, Flexbox, `backdrop-filter` (Glassmorphism) e design responsivo.
-- **Vanilla JavaScript (ES6+):** Lógica de negócios de loop de inventário, manipulação do DOM e `localStorage`.
+- **Vanilla JavaScript (ES6+):** Lógica de negócios de loop de inventário e manipulação do DOM.
+- **Google Firebase:** Backend serverless (Authentication e Cloud Firestore).
 
 ## 💻 Como Rodar Localmente (Desenvolvimento)
 

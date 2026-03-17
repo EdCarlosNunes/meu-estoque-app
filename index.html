@@ -10,76 +10,118 @@
     <div class="background-element blob-1"></div>
     <div class="background-element blob-2"></div>
 
-    <nav class="navbar glass-panel">
-        <h1>🍎 Banco de Dados de Comida</h1>
-    </nav>
-
-    <main class="container">
-        <section class="panel glass-panel form-panel">
-            <h2>Novo Cadastro</h2>
-            <form id="cadastroForm">
+    <!-- TELA DE AUTENTICAÇÃO (LOGIN/CADASTRO) -->
+    <div id="authContainer" class="auth-wrapper">
+        <div class="glass-panel auth-panel">
+            <h2>🍎 Bem-vindo ao Estoque</h2>
+            <p class="auth-subtitle">Faça login para acessar seu banco privado.</p>
+            
+            <form id="authForm">
                 <div class="form-group">
-                    <label for="nome">Nome do Alimento</label>
-                    <input type="text" id="nome" required placeholder="Ex: Maçã, Arroz">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" required placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required placeholder="Mínimo 6 caracteres">
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="quantidade">Quantidade de Unidades</label>
-                        <input type="number" id="quantidade" min="1" value="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="peso">Peso/Volume (Kg/L)</label>
-                        <input type="number" id="peso" min="0.01" step="0.01" value="1.0" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="dataEntrada">Data de Entrada</label>
-                        <input type="date" id="dataEntrada" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="dataValidade">Data de Validade</label>
-                        <input type="date" id="dataValidade" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="preco">Preço Total Pago (R$)</label>
-                    <input type="number" id="preco" min="0.01" step="0.01" required placeholder="Ex: 15.50">
-                </div>
-
-                <button type="submit" class="btn-primary">Cadastrar</button>
+                <p id="authError" class="auth-error"></p>
+                
+                <button type="submit" id="btnAcaoAuth" class="btn-primary">Entrar</button>
             </form>
-        </section>
-
-        <section class="panel glass-panel table-panel">
-            <h2>Estoque Atual</h2>
-            <div class="table-container" style="display: none;">
-                <table id="estoqueTable">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Peso (Kg/L)</th>
-                            <th>Entrada</th>
-                            <th>Validade</th>
-                            <th>Preço (R$)</th>
-                            <th>Status</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="estoqueBody">
-                        <!-- Itens renderizados aqui via JS -->
-                    </tbody>
-                </table>
+            
+            <div class="auth-toggle">
+                <span id="textoToggle">Não tem uma conta?</span>
+                <button id="btnToggleAuth" class="btn-link">Cadastrar-se</button>
             </div>
-            <div id="emptyState" class="empty-state">
-                <p>O estoque está vazio no momento.</p>
-            </div>
-        </section>
-    </main>
+        </div>
+    </div>
 
-    <script src="script.js"></script>
+    <!-- APLICAÇÃO PRINCIPAL (ESCONDIDA ATÉ LOGAR) -->
+    <div id="appContainer" style="display: none;">
+        <nav class="navbar glass-panel">
+            <h1>🍎 Banco de Dados de Comida</h1>
+            <div class="user-controls">
+                <span id="userEmailDisplay">carregando...</span>
+                <button id="btnLogout" class="btn-logout">Sair do Sistema</button>
+            </div>
+        </nav>
+
+        <main class="container">
+            <section class="panel glass-panel form-panel">
+                <h2>Novo Cadastro</h2>
+                <form id="cadastroForm">
+                    <div class="form-group">
+                        <label for="nome">Nome do Alimento</label>
+                        <input type="text" id="nome" required placeholder="Ex: Maçã, Arroz">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quantidade">Quantidade de Unidades</label>
+                            <input type="number" id="quantidade" min="1" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="peso">Peso/Volume (Kg/L)</label>
+                            <input type="number" id="peso" min="0.01" step="0.01" value="1.0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dataEntrada">Data de Entrada</label>
+                            <input type="date" id="dataEntrada" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataValidade">Data de Validade</label>
+                            <input type="date" id="dataValidade" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preco">Preço Total Pago (R$)</label>
+                        <input type="number" id="preco" min="0.01" step="0.01" required placeholder="Ex: 15.50">
+                    </div>
+
+                    <button type="submit" id="btnSalvarEstoque" class="btn-primary">
+                        <span id="btnSalvarTexto">Cadastrar no Banco</span>
+                    </button>
+                </form>
+            </section>
+
+            <section class="panel glass-panel table-panel">
+                <h2>Estoque Atual (Nuvem)</h2>
+                
+                <div id="loadingState" class="empty-state">
+                    <p>Carregando dados criptografados...</p>
+                </div>
+
+                <div class="table-container" style="display: none;">
+                    <table id="estoqueTable">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Peso (Kg/L)</th>
+                                <th>Entrada</th>
+                                <th>Validade</th>
+                                <th>Preço (R$)</th>
+                                <th>Status</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estoqueBody">
+                            <!-- Itens renderizados aqui via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <p>O seu estoque está vazio no momento.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="script.js"></script>
 </body>
 </html>
