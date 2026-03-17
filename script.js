@@ -1,6 +1,5 @@
-// Import Firebase SDKs
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 // Your Firebase config
@@ -30,6 +29,7 @@ const btnLogout = document.getElementById('btnLogout');
 // Auth Tabs (from Inputs)
 const tabLoginInput = document.getElementById('tabLoginInput');
 const tabRegisterInput = document.getElementById('tabRegisterInput');
+const btnGoogleAuth = document.getElementById('btnGoogleAuth');
 
 const formCadastro = document.getElementById('cadastroForm');
 const btnSalvarEstoque = document.getElementById('btnSalvarEstoque');
@@ -98,6 +98,22 @@ authForm.addEventListener('submit', async (e) => {
     } finally {
         btnAcaoAuth.disabled = false;
         btnAcaoAuth.textContent = isLoginMode ? 'Entrar no Sistema' : 'Criar Conta Nova';
+    }
+});
+
+btnGoogleAuth.addEventListener('click', async () => {
+    btnGoogleAuth.disabled = true;
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        if (error.code === 'auth/popup-closed-by-user') {
+            authError.textContent = 'O login com Google foi cancelado.';
+        } else {
+            authError.textContent = `Erro Google Auth: ${error.message}`;
+        }
+    } finally {
+        btnGoogleAuth.disabled = false;
     }
 });
 

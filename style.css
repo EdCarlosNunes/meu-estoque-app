@@ -226,6 +226,48 @@ input:focus {
 .btn-primary:active { transform: scale(0.96); background-color: var(--sys-blue-active); }
 .btn-primary:disabled { opacity: 0.6; pointer-events: none; }
 
+/* Google Auth Button */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: var(--label-tertiary);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.auth-divider span {
+    padding: 0 10px;
+}
+
+.btn-google {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #fff;
+    color: var(--label-primary);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.btn-google:hover { background-color: #f8f9fa; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
+.btn-google:active { transform: scale(0.98); }
+
 /* 8. MAIN APP LAYOUT (NAV E CONTAINERS) */
 .app-layout { padding-top: 15px; }
 
