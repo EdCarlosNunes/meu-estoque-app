@@ -25,7 +25,7 @@ O **Banco de Dados de Comida** é uma aplicação web de página única (SPA) de
 
 Acesse a aplicação completa funcionando direto do seu navegador, sem precisar instalar nada, hospedada gratuitamente no Netlify:
 
-👉 **[LINK DO SITE AQUI - Exemplo: https://meu-estoque-app.netlify.app]**
+👉 **[https://edcarlosnunes.github.io/meu-estoque-app/](https://edcarlosnunes.github.io/meu-estoque-app/)**
 
 ## 🛠️ Tecnologias Utilizadas
 
