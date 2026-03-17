@@ -442,36 +442,49 @@ function atualizarAnalytics(itens) {
 
         const ctxFin = document.getElementById('financeiroChart').getContext('2d');
         chartFinanceiroInstance = new Chart(ctxFin, {
-            type: 'doughnut',
+            type: 'line', // Mudou de doughnut para linha com pontos
             data: {
                 labels: labelsFinanceiro,
                 datasets: [{
+                    label: 'Investimento (R$)',
                     data: dataFinanceiro,
-                    backgroundColor: ['#0A84FF', '#34C759', '#FF9500', '#5E5CE6', '#FF2D55', '#AF52DE', '#FF3B30', '#8E8E93'],
-                    borderWidth: 0,
-                    hoverOffset: 8
+                    backgroundColor: '#FF2D55', // Rosa Apple
+                    borderColor: '#FF2D55',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#FF2D55',
+                    pointBorderWidth: 3,
+                    pointRadius: 6, // Pontos bem visíveis
+                    pointHoverRadius: 8,
+                    fill: true, // Preenche a área do gráfico
+                    backgroundColor: 'rgba(255, 45, 85, 0.1)', // Rosa translúcido no fundo
+                    tension: 0.3 // Deixa a linha levemente curva
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    title: { display: true, text: 'Valor Financeiro (R$) por Produto' },
-                    legend: { position: 'right' },
+                    title: { display: true, text: 'Pico de Custo: Produtos Mais Caros (Total R$)' },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                let label = context.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed !== null) {
-                                    label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed);
-                                }
-                                return label;
+                                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
                             }
                         }
                     }
                 },
-                cutout: '65%',
-                responsive: true,
-                maintainAspectRatio: false
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value;
+                            }
+                        }
+                    }
+                }
             }
         });
 
