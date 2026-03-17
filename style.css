@@ -548,6 +548,10 @@ input:focus {
     gap: 20px;
 }
 
+.mt-4 {
+    margin-top: 20px;
+}
+
 .chart-container {
     background: rgba(255,255,255,0.6);
     border-radius: var(--radius-md);

@@ -46,6 +46,8 @@ let isLoginMode = true;
 let currentUser = null;
 let chartValidadeInstance = null;
 let chartReposicaoInstance = null;
+let chartFinanceiroInstance = null;
+let chartRadarInstance = null;
 
 // Configurar datas de hoje nos inputs
 const hoje = new Date().toISOString().split('T')[0];
@@ -312,7 +314,7 @@ window.removerItem = async function(docId) { // Expose for easy binding
 function atualizarAnalytics(itens) {
     // 1. Calcular Métricas de Resumo
     let valorTotal = 0;
-    let tensEmRisco = 0;
+    let itensCriticos15Dias = 0;
 
     // Agrupamento de itens por nome para os gráficos
     const itensAgrupados = {};
@@ -320,7 +322,8 @@ function atualizarAnalytics(itens) {
     itens.forEach(item => {
         valorTotal += Number(item.precoUnitario);
         const st = classificarStatus(item.validade);
-        if (st.classe !== 'status-ok') tensEmRisco++;
+        // Itens críticos: Vencidos ou vencem em <= 15 dias
+        if (st.dias <= 15) itensCriticos15Dias++;
         
         const nomeUpper = item.nome.toUpperCase(); // Normalizar maiúsculo/minúsculo
         
@@ -345,8 +348,10 @@ function atualizarAnalytics(itens) {
     // Atualizar no HTML as métricas numéricas
     document.getElementById('metricValorInvestido').textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('metricTotalUnidades').textContent = itens.length;
-    document.getElementById('metricItensAtencao').textContent = tensEmRisco;
+    // KPI "Itens em Atenção" -> Atualiza visual e label se quiser depois, mas o valor é crítico (<15 dias)
+    document.getElementById('metricItensAtencao').textContent = itensCriticos15Dias;
 
+    // --- GRÁFICOS ANTIGOS (Mantidos e Melhorados) ---
     // 2. Gráfico 1: Prazos de Validade (Visão Agrupada x Dias pra vencer)
     // Transforma o objeto agrupado num Array e ordena pelos que vão vencer primeiro
     const dadosGraficoVencimento = Object.values(itensAgrupados).sort((a,b) => a.menorDiasParaVencer - b.menorDiasParaVencer);
@@ -424,4 +429,99 @@ function atualizarAnalytics(itens) {
             }
         }
     });
+
+    // --- NOVOS GRÁFICOS (Financeiro e Radar) ---
+    function gerarDashboard() {
+        // 4. Gráfico 3 (Financeiro): Valor Financeiro por Item/Categoria (Doughnut)
+        // Ordena pelo item mais caro no total para o gráfico ficar bonito
+        const dadosFinanceiros = Object.values(itensAgrupados).sort((a,b) => b.custoTotal - a.custoTotal);
+        const labelsFinanceiro = dadosFinanceiros.map(u => u.nome);
+        const dataFinanceiro = dadosFinanceiros.map(u => Number(u.custoTotal.toFixed(2)));
+
+        if (chartFinanceiroInstance) chartFinanceiroInstance.destroy();
+
+        const ctxFin = document.getElementById('financeiroChart').getContext('2d');
+        chartFinanceiroInstance = new Chart(ctxFin, {
+            type: 'doughnut',
+            data: {
+                labels: labelsFinanceiro,
+                datasets: [{
+                    data: dataFinanceiro,
+                    backgroundColor: ['#0A84FF', '#34C759', '#FF9500', '#5E5CE6', '#FF2D55', '#AF52DE', '#FF3B30', '#8E8E93'],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                plugins: {
+                    title: { display: true, text: 'Valor Financeiro (R$) por Produto' },
+                    legend: { position: 'right' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) {
+                                    label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%',
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // 5. Gráfico 4 (Radar/Bar): Radar de Validade (Bar Chart - Agrupado em 3 buckets)
+        let contagemVence15 = 0;   // < 15 dias (Alerta Vermelho)
+        let contagemVence30 = 0;   // 15 a 30 dias (Alerta Amarelo)
+        let contagemVenceBom = 0;  // > 30 dias (Verde)
+
+        itens.forEach(item => {
+            const diasParaVencer = classificarStatus(item.validade).dias;
+            if (diasParaVencer < 15) {
+                contagemVence15++;
+            } else if (diasParaVencer >= 15 && diasParaVencer <= 30) {
+                contagemVence30++;
+            } else {
+                contagemVenceBom++;
+            }
+        });
+
+        if (chartRadarInstance) chartRadarInstance.destroy();
+
+        const ctxRadar = document.getElementById('radarChart').getContext('2d');
+        chartRadarInstance = new Chart(ctxRadar, {
+            type: 'bar',
+            data: {
+                labels: ['< 15 dias', '15 a 30 dias', '> 30 dias'],
+                datasets: [{
+                    label: 'Itens em Estoque',
+                    data: [contagemVence15, contagemVence30, contagemVenceBom],
+                    backgroundColor: ['#FF3B30', '#FFCC00', '#34C759'], // Vermelho, Amarelo, Verde iOS
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Radar Geral de Validades (Unidades)' },
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chama a função que gera e injeta os novos gráficos gerenciais
+    gerarDashboard();
 }
