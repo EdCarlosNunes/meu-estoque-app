@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -203,7 +203,70 @@
                     </div>
                 </div>
 
-                <div class="charts-grid">
+                <!-- NOVA SEÇÃO: WIDGETS INTELIGENTES -->
+                <div class="smart-widgets-grid mt-4">
+                    <!-- Widget 1: Calculadora de Autonomia -->
+                    <div class="widget-card glass-panel fade-in-up" style="animation-delay: 0.1s;">
+                        <div class="widget-header">
+                            <span class="widget-icon">⏳</span>
+                            <h3>Calculadora de Autonomia</h3>
+                        </div>
+                        <div class="widget-body">
+                            <p class="widget-desc">Estoque estimado para sustentar:</p>
+                            <div class="slider-container">
+                                <input type="range" id="sliderPessoas" min="1" max="10" value="1" class="ios-slider">
+                                <span id="labelPessoas" class="slider-val-badge">1 pessoa</span>
+                            </div>
+                            <div class="autonomia-result">
+                                <span id="resultadoAutonomia" class="resultado-highlight">-- dias</span>
+                            </div>
+                            <p class="legenda-micro">*Base: 1.5kg de alimento/dia/pessoa</p>
+                        </div>
+                    </div>
+
+                    <!-- Widget 2: Carga Física -->
+                    <div class="widget-card glass-panel fade-in-up" style="animation-delay: 0.2s;">
+                        <div class="widget-header">
+                            <span class="widget-icon">⚖️</span>
+                            <h3>Carga Física Total</h3>
+                        </div>
+                        <div class="widget-body carga-body">
+                            <div class="carga-display">
+                                <span id="pesoTotalDesc">O peso bruto da sua despensa é de:</span>
+                                <div class="carga-valor">
+                                    <span id="pesoTotalEstoque">0</span>
+                                    <span class="carga-unidade">Kg</span>
+                                </div>
+                            </div>
+                            <!-- Mini Meta Circular -->
+                            <div class="meta-tracker">
+                                <div class="circular-progress" id="metaCircle">
+                                    <span class="progress-value" id="metaValue">0%</span>
+                                </div>
+                                <div class="meta-texto">
+                                    <p>Meta: <span id="metaTarget">50</span>kg</p>
+                                    <p class="legenda-micro" id="metaFalta">Faltam 50kg</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget 3: Assistente FIFO -->
+                    <div class="widget-card glass-panel fade-in-up" id="widgetFifo" style="animation-delay: 0.3s; grid-column: 1 / -1; max-width: 100%;">
+                        <div class="widget-header fifo-header">
+                            <div>
+                                <span class="widget-icon">🍽️</span>
+                                <h3>O Que Comer Primeiro?</h3>
+                            </div>
+                            <p class="legenda-micro">Sistema FIFO Inteligente (Vencem mais rápido)</p>
+                        </div>
+                        <div class="widget-body fifo-lista" id="listaFifo">
+                            <!-- Injetado via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid mt-4">
                     <div class="chart-container">
                         <canvas id="validadeChart"></canvas>
                     </div>
@@ -223,6 +286,6 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=3"></script>
+    <script type="module" src="script.js?v=4"></script>
 </body>
 </html>

@@ -315,12 +315,19 @@ function atualizarAnalytics(itens) {
     // 1. Calcular Métricas de Resumo
     let valorTotal = 0;
     let itensCriticos15Dias = 0;
+    let pesoFisicoTotal = 0; // Novo: para Carga Física
 
     // Agrupamento de itens por nome para os gráficos
     const itensAgrupados = {};
 
     itens.forEach(item => {
         valorTotal += Number(item.precoUnitario);
+        
+        // Carga Física: normaliza para Kg (Ex: se for g, divide por 1000)
+        let pesoKg = Number(item.peso);
+        if (item.unidade === 'g' || item.unidade === 'ml') pesoKg = pesoKg / 1000;
+        pesoFisicoTotal += pesoKg;
+
         const st = classificarStatus(item.validade);
         // Itens críticos: Vencidos ou vencem em <= 15 dias
         if (st.dias <= 15) itensCriticos15Dias++;
@@ -429,6 +436,116 @@ function atualizarAnalytics(itens) {
             }
         }
     });
+
+    // --- LÓGICA DOS WIDGETS INTELIGENTES ---
+    
+    // WIDGET 2: Carga Física Total & Meta
+    const metaKg = 50; // Meta fixa como exemplo, pode virar campo depois
+    document.getElementById('pesoTotalEstoque').textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
+    
+    let porcentagemMeta = (pesoFisicoTotal / metaKg) * 100;
+    if (porcentagemMeta > 100) porcentagemMeta = 100;
+    
+    document.getElementById('metaValue').textContent = `${Math.round(porcentagemMeta)}%`;
+    document.getElementById('metaCircle').style.background = `conic-gradient(var(--sys-blue) ${porcentagemMeta * 3.6}deg, rgba(0,0,0,0.05) 0deg)`;
+    
+    const faltaKg = metaKg - pesoFisicoTotal;
+    if (faltaKg > 0) {
+        document.getElementById('metaFalta').textContent = `Faltam ${faltaKg.toFixed(1)}kg`;
+        document.getElementById('metaFalta').style.color = "var(--label-tertiary)";
+    } else {
+        document.getElementById('metaFalta').textContent = "Meta Atingida! 🎉";
+        document.getElementById('metaFalta').style.color = "var(--sys-green)";
+        document.getElementById('metaCircle').style.background = `conic-gradient(var(--sys-green) 360deg, rgba(0,0,0,0.05) 0deg)`;
+    }
+
+    // WIDGET 1: Calculadora de Autonomia
+    const consumoPorPessoaDiaKg = 1.5;
+    const sliderPessoas = document.getElementById('sliderPessoas');
+    const labelPessoas = document.getElementById('labelPessoas');
+    const resultadoAutonomia = document.getElementById('resultadoAutonomia');
+
+    function calcularDiasAutonomia() {
+        const qtdPessoas = parseInt(sliderPessoas.value);
+        labelPessoas.textContent = qtdPessoas === 1 ? '1 pessoa' : `${qtdPessoas} pessoas`;
+        
+        if (pesoFisicoTotal <= 0) {
+            resultadoAutonomia.textContent = "-- dias";
+            return;
+        }
+
+        const consumoTotalDia = qtdPessoas * consumoPorPessoaDiaKg;
+        const diasEstimados = Math.floor(pesoFisicoTotal / consumoTotalDia);
+        resultadoAutonomia.textContent = `${diasEstimados} dias`;
+        
+        // Mudar cor baseado nos dias
+        if(diasEstimados < 7) resultadoAutonomia.style.color = "var(--sys-red)";
+        else if (diasEstimados <= 15) resultadoAutonomia.style.color = "var(--sys-orange)";
+        else resultadoAutonomia.style.color = "var(--sys-green)";
+    }
+    
+    // Remover event listeners antigos para evitar duplicação em re-renderizações
+    const novoSlider = sliderPessoas.cloneNode(true);
+    sliderPessoas.parentNode.replaceChild(novoSlider, sliderPessoas);
+    novoSlider.addEventListener('input', calcularDiasAutonomia);
+    
+    // Chamada inicial
+    // Recapturar referência após o clone
+    document.getElementById('sliderPessoas').value = "1"; 
+    document.getElementById('labelPessoas').textContent = "1 pessoa";
+    // Chama o recálculo inicial baseado nos dados frescos
+    const initialQtdPessoas = 1;
+    if (pesoFisicoTotal > 0) {
+         const initialDias = Math.floor(pesoFisicoTotal / (initialQtdPessoas * consumoPorPessoaDiaKg));
+         resultadoAutonomia.textContent = `${initialDias} dias`;
+    } else {
+         resultadoAutonomia.textContent = "-- dias";
+    }
+
+    // WIDGET 3: Assistente FIFO (O que comer primeiro)
+    const listaFifo = document.getElementById('listaFifo');
+    listaFifo.innerHTML = ''; // Limpa a lista
+    
+    // Pega todos os itens (não agrupados, precisamos do documento específico para dar baixa) e filtra
+    // Ordenar itens do que vence primeiro para o último
+    const itensOrdenados = [...itens].sort((a, b) => new Date(a.validade) - new Date(b.validade));
+    // Pegar apenas os top 3 mais perigosos
+    const top3Fifo = itensOrdenados.slice(0, 3);
+
+    if (top3Fifo.length === 0) {
+        listaFifo.innerHTML = `<p class="legenda-micro" style="text-align: center;">Seu estoque está vazio.</p>`;
+    } else {
+        top3Fifo.forEach(item => {
+            const status = classificarStatus(item.validade);
+            const div = document.createElement('div');
+            div.className = 'fifo-item';
+            div.innerHTML = `
+                <div class="fifo-info">
+                    <h4>${item.nome} (${item.peso}${item.unidade})</h4>
+                    <p style="color: ${status.classe === 'status-danger' || status.classe === 'status-warning' ? 'var(--sys-red)' : 'var(--sys-orange)'}">
+                        ${status.texto === 'Vencido' ? '⚠️ Vencido' : '⏳ Vence em ' + status.dias + ' dias'}
+                    </p>
+                </div>
+                <button class="btn-consumir" data-consume-id="${item.id}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                    Consumir
+                </button>
+            `;
+            listaFifo.appendChild(div);
+        });
+
+        // Event listener para consumo rápido
+        document.querySelectorAll('.btn-consumir').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const btnClicado = e.currentTarget;
+                const idOriginal = btnClicado.getAttribute('data-consume-id');
+                btnClicado.disabled = true;
+                btnClicado.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></div>`;
+                // Reutiliza a função removerItem global que já exclui do firebase e dá recarregarEstoque()
+                removerItem(idOriginal);
+            });
+        });
+    }
 
     // --- NOVOS GRÁFICOS (Financeiro e Radar) ---
     function gerarDashboard() {
