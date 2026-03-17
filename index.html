@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=9">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -206,9 +206,29 @@
                 <!-- Painel de Metas de Sobrevivência (Agrupado topo) -->
                 <div class="panel-header" style="margin-top: 15px; margin-bottom: 5px;">
                     <h2 style="font-size: 1.35rem;">🎯 Planejamento de Metas (Longo Prazo)</h2>
-                    <p class="legenda-micro" style="margin-top: 5px;">Configure a meta ideal de cada produto e use as sugestões mágicas de 1 a 2 anos.</p>
+                    <p class="legenda-micro" style="margin-top: 5px;">Acompanhe o painel de evolução abaixo ou clique nos cartões para configurar novas metas.</p>
                 </div>
                 
+                <!-- Tabela de Resumo Geral -->
+                <div id="metasSummaryContainer" style="margin-bottom: 25px; display: none;">
+                    <h3 style="font-size: 1rem; color: var(--label-secondary); margin-bottom: 10px;">📋 Resumo da Evolução</h3>
+                    <div style="overflow-x: auto; border: 1px solid rgba(0,0,0,0.05); border-radius: var(--radius-sm);">
+                        <table class="metas-summary-table" id="metasSummaryTable">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Estoque Atual</th>
+                                    <th>Meta Desejada</th>
+                                    <th>Progresso</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metasSummaryBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; color: var(--label-secondary); margin-bottom: 10px;">⚙️ Configurar Metas (Por Produto):</h3>
                 <div class="metas-items-grid" id="metasItemsGrid" style="margin-bottom: 20px;">
                     <!-- Preenchido via Javascript -->
                 </div>
@@ -286,6 +306,6 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=8"></script>
+    <script type="module" src="script.js?v=9"></script>
 </body>
 </html>

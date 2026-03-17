@@ -767,6 +767,22 @@ input:focus {
 .btn-sugestao:hover { background: rgba(0,0,0,0.08); }
 .btn-sugestao:active { transform: scale(0.95); }
 
+/* Meta Card Expansion Logic */
+.meta-card-body { transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 0; opacity: 0; overflow: hidden; }
+.meta-card-body.expandido { max-height: 400px; opacity: 1; padding-bottom: 5px; }
+.meta-card-header { user-select: none; }
+.meta-card-header span:last-child { transition: transform 0.3s ease; }
+.meta-card-body.expandido ~ .meta-card-header span:last-child,
+.meta-card:has(.expandido) .meta-card-header span:last-child { transform: rotate(180deg); }
+
+/* Metas Summary Table */
+.metas-summary-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: rgba(255,255,255,0.6); border-radius: var(--radius-sm); overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+.metas-summary-table th { background: rgba(0,0,0,0.04); padding: 12px 15px; text-align: left; font-size: 0.85rem; color: var(--label-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.metas-summary-table td { padding: 12px 15px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.95rem; font-weight: 500; }
+.metas-summary-table tr:last-child td { border-bottom: none; }
+.summary-progress-bar { height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden; margin-top: 5px; width: 100px; }
+.summary-progress-fill { height: 100%; border-radius: 3px; }
+
 /* 12. RESPONSIVIDADE */
 @media (max-width: 1024px) {
     .split-layout { grid-template-columns: 1fr; }
