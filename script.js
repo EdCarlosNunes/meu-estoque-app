@@ -1,9 +1,9 @@
-// Import the functions you need from the SDKs you need
+// Import Firebase SDKs
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-// Your web app's Firebase configuration (Provided by User)
+// Your Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyCZ6cK8glSTyIcIHR2ZXeGlEUAk-FLvN2g",
     authDomain: "meu-estoque-1bb9a.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
     appId: "1:331738983375:web:63b69c7abdd274959500ba"
 };
 
-// Initialize Firebase
+// Start Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -23,50 +23,55 @@ const authContainer = document.getElementById('authContainer');
 const appContainer = document.getElementById('appContainer');
 const authForm = document.getElementById('authForm');
 const btnAcaoAuth = document.getElementById('btnAcaoAuth');
-const textoToggle = document.getElementById('textoToggle');
-const btnToggleAuth = document.getElementById('btnToggleAuth');
 const authError = document.getElementById('authError');
 const userEmailDisplay = document.getElementById('userEmailDisplay');
 const btnLogout = document.getElementById('btnLogout');
 
+// Auth Tabs
+const tabLogin = document.getElementById('tabLogin');
+const tabRegister = document.getElementById('tabRegister');
+
 const formCadastro = document.getElementById('cadastroForm');
 const btnSalvarEstoque = document.getElementById('btnSalvarEstoque');
-const btnSalvarTexto = document.getElementById('btnSalvarTexto');
 const estoqueBody = document.getElementById('estoqueBody');
 const loadingState = document.getElementById('loadingState');
 const emptyState = document.getElementById('emptyState');
 const tableContainer = document.querySelector('.table-container');
 
+// Analytics DOM
+const analyticsPanel = document.getElementById('analyticsPanel');
+
 // State
 let isLoginMode = true;
 let currentUser = null;
+let chartValidadeInstance = null;
+let chartReposicaoInstance = null;
 
-// Inicializar inputs de data com a data atual
+// Configurar datas de hoje nos inputs
 const hoje = new Date().toISOString().split('T')[0];
 document.getElementById('dataEntrada').value = hoje;
 document.getElementById('dataValidade').value = hoje;
 
 // ==========================================
-// 1. AUTHENTICATION LOGIC
+// 1. AUTHENTICATION (Login / Cadastro explícito)
 // ==========================================
 
-// Toggle between Login and Register
-btnToggleAuth.addEventListener('click', () => {
-    isLoginMode = !isLoginMode;
+tabLogin.addEventListener('click', () => {
+    isLoginMode = true;
+    tabLogin.classList.add('active');
+    tabRegister.classList.remove('active');
+    btnAcaoAuth.textContent = 'Entrar no Sistema';
     authError.textContent = '';
-    
-    if (isLoginMode) {
-        btnAcaoAuth.textContent = 'Entrar';
-        textoToggle.textContent = 'Não tem uma conta?';
-        btnToggleAuth.textContent = 'Cadastrar-se';
-    } else {
-        btnAcaoAuth.textContent = 'Criar Conta';
-        textoToggle.textContent = 'Já tem uma conta?';
-        btnToggleAuth.textContent = 'Fazer Login';
-    }
 });
 
-// Handle Login/Register Submit
+tabRegister.addEventListener('click', () => {
+    isLoginMode = false;
+    tabRegister.classList.add('active');
+    tabLogin.classList.remove('active');
+    btnAcaoAuth.textContent = 'Criar Conta Nova';
+    authError.textContent = '';
+});
+
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value.trim();
@@ -83,55 +88,41 @@ authForm.addEventListener('submit', async (e) => {
             await createUserWithEmailAndPassword(auth, email, password);
         }
     } catch (error) {
-        console.error("Auth error:", error);
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
             authError.textContent = 'E-mail ou senha incorretos.';
         } else if (error.code === 'auth/email-already-in-use') {
-            authError.textContent = 'Este e-mail já está cadastrado.';
+            authError.textContent = 'Este e-mail já possui uma conta.';
         } else if (error.code === 'auth/weak-password') {
             authError.textContent = 'A senha deve ter pelo menos 6 caracteres.';
         } else {
-            authError.textContent = 'Erro de autenticação. Tente novamente.';
+            authError.textContent = 'Erro ao conectar. Tente novamente.';
         }
     } finally {
         btnAcaoAuth.disabled = false;
-        btnAcaoAuth.textContent = isLoginMode ? 'Entrar' : 'Criar Conta';
+        btnAcaoAuth.textContent = isLoginMode ? 'Entrar no Sistema' : 'Criar Conta Nova';
     }
 });
 
-// Logout
-btnLogout.addEventListener('click', () => {
-    signOut(auth);
-});
+btnLogout.addEventListener('click', () => signOut(auth));
 
-// Auth State Observer - The core router
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // User is signed in.
         currentUser = user;
         userEmailDisplay.textContent = user.email;
         authContainer.style.display = 'none';
         appContainer.style.display = 'block';
-        
-        // Wipe clean the form just in case
-        document.getElementById('password').value = '';
-        
-        // Load their specific data
         carregarEstoque();
     } else {
-        // No user is signed in.
         currentUser = null;
         authContainer.style.display = 'flex';
         appContainer.style.display = 'none';
-        estoqueBody.innerHTML = ''; // Clear table
     }
 });
 
 // ==========================================
-// 2. FIRESTORE DATABASE LOGIC
+// 2. FIRESTORE DATABASE E TABELA
 // ==========================================
 
-// Utilitários de Data
 function formataDataBR(dataISO) {
     const partes = dataISO.split('-');
     if(partes.length !== 3) return dataISO;
@@ -141,35 +132,27 @@ function formataDataBR(dataISO) {
 function classificarStatus(dataValidadeISO) {
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
-    
     const[y, m, d] = dataValidadeISO.split('-');
     const validade = new Date(y, m-1, d);
     validade.setHours(0,0,0,0);
+    const diffDays = Math.ceil((validade - hoje) / (1000 * 60 * 60 * 24));
 
-    const diffTime = validade - hoje;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-        return { texto: 'Vencido', classe: 'status-danger' };
-    } else if (diffDays <= 30) {
-        return { texto: 'Atenção', classe: 'status-warning' };
-    } else {
-        return { texto: 'OK', classe: 'status-ok' };
-    }
+    if (diffDays < 0) return { texto: 'Vencido', classe: 'status-danger', dias: diffDays };
+    if (diffDays <= 30) return { texto: 'Atenção', classe: 'status-warning', dias: diffDays };
+    return { texto: 'OK', classe: 'status-ok', dias: diffDays };
 }
 
-// Fetch Data from Firestore
 async function carregarEstoque() {
     if (!currentUser) return;
     
     loadingState.style.display = 'block';
     tableContainer.style.display = 'none';
     emptyState.style.display = 'none';
+    analyticsPanel.style.display = 'none';
     estoqueBody.innerHTML = '';
 
     try {
         const estoqueRef = collection(db, "estoque");
-        // Query to get ONLY the current user's items, sorted by validade
         const q = query(estoqueRef, where("userId", "==", currentUser.uid), orderBy("validade", "asc"));
         
         const querySnapshot = await getDocs(q);
@@ -185,6 +168,7 @@ async function carregarEstoque() {
         } else {
             loadingState.style.display = 'none';
             tableContainer.style.display = 'block';
+            analyticsPanel.style.display = 'block'; // Mostrar gráficos
             
             itens.forEach(item => {
                 const tr = document.createElement('tr');
@@ -193,33 +177,33 @@ async function carregarEstoque() {
                 tr.innerHTML = `
                     <td>${item.nome}</td>
                     <td>${item.peso}</td>
-                    <td>${formataDataBR(item.entrada)}</td>
                     <td><strong>${formataDataBR(item.validade)}</strong></td>
                     <td>R$ ${Number(item.precoUnitario).toFixed(2)}</td>
                     <td><span class="status-badge ${status.classe}">${status.texto}</span></td>
-                    <td><button class="btn-baixa" data-id="${item.id}">Baixa ✓</button></td>
+                    <td><button class="btn-baixa" data-id="${item.id}">🗑️ Excluir</button></td>
                 `;
                 estoqueBody.appendChild(tr);
             });
 
-            // Bind delete events
             document.querySelectorAll('.btn-baixa').forEach(btn => {
-                btn.addEventListener('click', (e) => removerItem(e.target.getAttribute('data-id'), e.target));
+                btn.addEventListener('click', (e) => removerItem(e.target.getAttribute('data-id')));
             });
+
+            // Rodar as análises assim que carregar!
+            atualizarAnalytics(itens);
         }
     } catch (error) {
-        console.error("Error fetching data:", error);
-        loadingState.innerHTML = `<p style="color:red">Erro ao carregar dados. Se é a primeira vez, o Firebase pode exigir a criação de um Índice.</p>`;
+        console.error("Erro na busca", error);
+        loadingState.innerHTML = `<p style="color:red">Ocorreu um problema ao baixar. Tentando novamente...</p>`;
     }
 }
 
-// Submissão do Formulário (Salvar no Firestore com Loop)
 formCadastro.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
 
     btnSalvarEstoque.disabled = true;
-    btnSalvarTexto.textContent = 'Salvando na Nuvem...';
+    document.getElementById('btnSalvarTexto').textContent = 'Salvando na Nuvem...';
 
     const nome = document.getElementById('nome').value.trim();
     const quantidade = parseInt(document.getElementById('quantidade').value, 10);
@@ -227,72 +211,149 @@ formCadastro.addEventListener('submit', async (e) => {
     const entrada = document.getElementById('dataEntrada').value;
     const validade = document.getElementById('dataValidade').value;
     const precoTotal = parseFloat(document.getElementById('preco').value);
-
     const precoUnitario = precoTotal / quantidade;
     
     try {
         const estoqueRef = collection(db, "estoque");
-        
-        // ⚠️ Regra de Negócio Crítica: Loop para Cadastro Individual Assíncrono
         const promessas = [];
         
+        // LOOP DE CADASTRO!
         for (let i = 0; i < quantidade; i++) {
-            const novoItem = {
-                userId: currentUser.uid, // Tie item to user
+            promessas.push(addDoc(estoqueRef, {
+                userId: currentUser.uid,
                 nome: nome,
                 peso: peso,
                 entrada: entrada,
                 validade: validade,
                 precoUnitario: precoUnitario,
-                timestamp: Date.now() // For strict ordering if needed later
-            };
-            promessas.push(addDoc(estoqueRef, novoItem));
+                timestamp: Date.now()
+            }));
         }
 
-        // Wait for all units to be saved
         await Promise.all(promessas);
         
-        // Reset form keeping dates
         document.getElementById('nome').value = '';
         document.getElementById('quantidade').value = '1';
         document.getElementById('preco').value = '';
         document.getElementById('nome').focus();
         
-        // Refresh Table
         carregarEstoque();
-        
     } catch (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Ocorreu um erro ao salvar no banco de dados.");
+        alert("Erro ao salvar.");
     } finally {
         btnSalvarEstoque.disabled = false;
-        btnSalvarTexto.textContent = 'Cadastrar no Banco';
+        document.getElementById('btnSalvarTexto').textContent = 'Salvar Produto';
     }
 });
 
-// Ação: Remover Item por Document ID do Firestore
-async function removerItem(docId, btnElement) {
+window.removerItem = async function(docId) { // Expose for easy binding
     if (!currentUser) return;
     
-    // Visual feedback
-    btnElement.textContent = 'Apagando...';
-    btnElement.disabled = true;
-    
+    // Mostra feedback no botão que o usuário clicou
+    const btn = document.querySelector(`button[data-id="${docId}"]`);
+    if(btn) {
+        btn.textContent = "Apagando...";
+        btn.disabled = true;
+    }
+
     try {
         await deleteDoc(doc(db, "estoque", docId));
-        // Remove row perfectly from DOM without full refresh
-        const row = btnElement.closest('tr');
-        row.remove();
-        
-        // Check if table is empty now
-        if (estoqueBody.children.length === 0) {
-            tableContainer.style.display = 'none';
-            emptyState.style.display = 'block';
-        }
+        // Recarregar os dados para atualizar a tabela e os GRÁFICOS
+        carregarEstoque();
     } catch (error) {
-        console.error("Erro ao remover:", error);
-        alert("Erro ao remover o item da nuvem.");
-        btnElement.textContent = 'Baixa ✓';
-        btnElement.disabled = false;
+        alert("Erro ao deletar.");
+        if(btn){
+            btn.textContent = "🗑️ Excluir";
+            btn.disabled = false;
+        }
     }
+}
+
+// ==========================================
+// 3. ANÁLISE GRÁFICA E KPIs (CHART.JS)
+// ==========================================
+
+function atualizarAnalytics(itens) {
+    // 1. Calcular Métricas de Resumo
+    let valorTotal = 0;
+    let tensEmRisco = 0;
+
+    const dataAnalise = itens.map(item => {
+        valorTotal += Number(item.precoUnitario);
+        const st = classificarStatus(item.validade);
+        if (st.classe !== 'status-ok') tensEmRisco++;
+        
+        return {
+            nome: item.nome,
+            diasParaVencer: st.dias,
+            custo: Number(item.precoUnitario)
+        };
+    });
+
+    // Atualizar no HTML
+    document.getElementById('metricValorInvestido').textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
+    document.getElementById('metricTotalUnidades').textContent = itens.length;
+    document.getElementById('metricItensAtencao').textContent = tensEmRisco;
+
+    // 2. Gráfico 1: Vencimento (Os 5 produtos mais urgentes)
+    const urgentes = [...dataAnalise].sort((a,b) => a.diasParaVencer - b.diasParaVencer).slice(0, 5);
+    
+    const labelsVencimento = urgentes.map(u => u.nome);
+    const dataVencimento = urgentes.map(u => u.diasParaVencer);
+    const coresVencimento = dataVencimento.map(d => d < 0 ? '#ff3b30' : (d <= 30 ? '#ffcc00' : '#34c759'));
+
+    if (chartValidadeInstance) chartValidadeInstance.destroy();
+    
+    const ctxVal = document.getElementById('validadeChart').getContext('2d');
+    chartValidadeInstance = new Chart(ctxVal, {
+        type: 'bar',
+        data: {
+            labels: labelsVencimento,
+            datasets: [{
+                label: 'Dias para Vencer',
+                data: dataVencimento,
+                backgroundColor: coresVencimento,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Barras horizontais
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Prazo de Validade (Itens Urgentes)' }
+            }
+        }
+    });
+
+    // 3. Gráfico 2: Reposição (Contagem de itens por nome)
+    const contagemMapeada = {};
+    dataAnalise.forEach(item => {
+        if (!contagemMapeada[item.nome]) contagemMapeada[item.nome] = 0;
+        contagemMapeada[item.nome] += 1;
+    });
+
+    const labelsReposicao = Object.keys(contagemMapeada);
+    const dataReposicao = Object.values(contagemMapeada);
+
+    if (chartReposicaoInstance) chartReposicaoInstance.destroy();
+
+    const ctxRep = document.getElementById('reposicaoChart').getContext('2d');
+    chartReposicaoInstance = new Chart(ctxRep, {
+        type: 'doughnut', // Gráfico circular estilo iOS
+        data: {
+            labels: labelsReposicao,
+            datasets: [{
+                data: dataReposicao,
+                backgroundColor: ['#007aff', '#34c759', '#ff9500', '#5856d6', '#ff2d55', '#af52de'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Distribuição do Estoque (Volumes)' }
+            }
+        }
+    });
 }
