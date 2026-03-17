@@ -97,14 +97,19 @@
                             </div>
                             <div class="form-group">
                                 <label for="peso">Peso/Volume</label>
-                                <div class="input-group-merged">
-                                    <input type="number" id="peso" min="0.01" step="0.01" value="1.0" required>
-                                    <select id="unidadeMedida" class="merged-select">
-                                        <option value="Kg">Kg</option>
-                                        <option value="g">g</option>
-                                        <option value="L">L</option>
-                                        <option value="ml">ml</option>
-                                    </select>
+                                <input type="number" id="peso" min="0.01" step="0.01" value="1.0" required style="margin-bottom: 8px;">
+                                <div class="mini-segmented-control">
+                                    <input type="radio" name="unidadeMedida" id="unit-kg" value="Kg" checked>
+                                    <label for="unit-kg">Kg</label>
+                                    
+                                    <input type="radio" name="unidadeMedida" id="unit-g" value="g">
+                                    <label for="unit-g">g</label>
+                                    
+                                    <input type="radio" name="unidadeMedida" id="unit-l" value="L">
+                                    <label for="unit-l">L</label>
+                                    
+                                    <input type="radio" name="unidadeMedida" id="unit-ml" value="ml">
+                                    <label for="unit-ml">ml</label>
                                 </div>
                             </div>
                         </div>

@@ -239,7 +239,8 @@ formCadastro.addEventListener('submit', async (e) => {
     const nome = document.getElementById('nome').value.trim();
     const quantidade = parseInt(document.getElementById('quantidade').value, 10);
     const peso = parseFloat(document.getElementById('peso').value);
-    const unidade = document.getElementById('unidadeMedida').value;
+    const unidadeEle = document.querySelector('input[name="unidadeMedida"]:checked');
+    const unidade = unidadeEle ? unidadeEle.value : 'Kg';
     const entrada = document.getElementById('dataEntrada').value;
     const validade = document.getElementById('dataValidade').value;
     const precoTotal = parseFloat(document.getElementById('preco').value);
