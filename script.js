@@ -207,7 +207,7 @@ async function carregarEstoque() {
 
                 tr.innerHTML = `
                     <td><strong>${item.nome}</strong></td>
-                    <td>${item.peso}</td>
+                    <td>${item.peso} ${item.unidade || 'Kg'}</td>
                     <td>${formataDataBR(item.validade)}</td>
                     <td>R$ ${Number(item.precoUnitario).toFixed(2).replace('.', ',')}</td>
                     <td><span class="badge ${status.classe}">${status.texto}</span></td>
@@ -239,6 +239,7 @@ formCadastro.addEventListener('submit', async (e) => {
     const nome = document.getElementById('nome').value.trim();
     const quantidade = parseInt(document.getElementById('quantidade').value, 10);
     const peso = parseFloat(document.getElementById('peso').value);
+    const unidade = document.getElementById('unidadeMedida').value;
     const entrada = document.getElementById('dataEntrada').value;
     const validade = document.getElementById('dataValidade').value;
     const precoTotal = parseFloat(document.getElementById('preco').value);
@@ -254,6 +255,7 @@ formCadastro.addEventListener('submit', async (e) => {
                 userId: currentUser.uid,
                 nome: nome,
                 peso: peso,
+                unidade: unidade,
                 entrada: entrada,
                 validade: validade,
                 precoUnitario: precoUnitario,
