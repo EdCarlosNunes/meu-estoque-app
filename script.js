@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 // Your Firebase config
 const firebaseConfig = {
@@ -47,7 +47,8 @@ let currentUser = null;
 let chartValidadeInstance = null;
 let chartReposicaoInstance = null;
 let chartFinanceiroInstance = null;
-let chartRadarInstance = null;
+let editingId = null;
+let currentItens = []; // Keep track of items for easy editing
 
 // Configurar datas de hoje nos inputs
 const hoje = new Date().toISOString().split('T')[0];
@@ -203,6 +204,8 @@ async function carregarEstoque() {
             tableContainer.style.display = 'block';
             analyticsPanel.style.display = 'block'; // Mostrar gráficos
             
+            currentItens = itens; // Guardar para edição
+
             itens.forEach(item => {
                 const tr = document.createElement('tr');
                 const status = classificarStatus(item.validade);
@@ -213,13 +216,26 @@ async function carregarEstoque() {
                     <td>${formataDataBR(item.validade)}</td>
                     <td>R$ ${Number(item.precoUnitario).toFixed(2).replace('.', ',')}</td>
                     <td><span class="badge ${status.classe}">${status.texto}</span></td>
-                    <td><button class="btn-delete" data-id="${item.id}">Apagar</button></td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-glass btn-glass-blue btn-edit" data-id="${item.id}">
+                                ✏️ Ajustar
+                            </button>
+                            <button class="btn-glass btn-glass-green btn-consume" data-id="${item.id}">
+                                🍽️ Consumir
+                            </button>
+                        </div>
+                    </td>
                 `;
                 estoqueBody.appendChild(tr);
             });
 
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.addEventListener('click', (e) => removerItem(e.target.getAttribute('data-id')));
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => ajustarItem(e.currentTarget.getAttribute('data-id')));
+            });
+
+            document.querySelectorAll('.btn-consume').forEach(btn => {
+                btn.addEventListener('click', (e) => removerItem(e.currentTarget.getAttribute('data-id')));
             });
 
             // Rodar as análises assim que carregar!
@@ -250,39 +266,77 @@ formCadastro.addEventListener('submit', async (e) => {
     
     try {
         const estoqueRef = collection(db, "estoque");
-        const promessas = [];
         
-        // LOOP DE CADASTRO!
-        for (let i = 0; i < quantidade; i++) {
-            promessas.push(addDoc(estoqueRef, {
-                userId: currentUser.uid,
+        if (editingId) {
+            // MODO EDIÇÃO: Atualiza apenas um documento
+            const itemRef = doc(db, "estoque", editingId);
+            await updateDoc(itemRef, {
                 nome: nome,
                 peso: peso,
                 unidade: unidade,
                 entrada: entrada,
                 validade: validade,
-                precoUnitario: precoUnitario,
-                timestamp: Date.now()
-            }));
+                precoUnitario: precoUnitario / quantidade // Ajusta se a quantidade mudar, mas edição costuma ser 1 a 1
+            });
+            editingId = null;
+        } else {
+            // MODO CADASTRO: Cria vários se necessário
+            const promessas = [];
+            for (let i = 0; i < quantidade; i++) {
+                promessas.push(addDoc(estoqueRef, {
+                    userId: currentUser.uid,
+                    nome: nome,
+                    peso: peso,
+                    unidade: unidade,
+                    entrada: entrada,
+                    validade: validade,
+                    precoUnitario: precoUnitario,
+                    timestamp: Date.now()
+                }));
+            }
+            await Promise.all(promessas);
         }
-
-        await Promise.all(promessas);
         
-        document.getElementById('nome').value = '';
-        document.getElementById('quantidade').value = '1';
-        document.getElementById('preco').value = '';
+        formCadastro.reset();
+        document.getElementById('dataEntrada').value = hoje;
+        document.getElementById('dataValidade').value = hoje;
         document.getElementById('nome').focus();
         
-        // Timeout para garantir que o Firebase propague antes do novo fetch
         setTimeout(() => carregarEstoque(), 500);
     } catch (error) {
         alert("Erro ao salvar o item: " + error.message);
         console.error("Save Error:", error);
     } finally {
         btnSalvarEstoque.disabled = false;
-        document.getElementById('btnSalvarTexto').textContent = 'Salvar Produto';
+        document.getElementById('btnSalvarTexto').textContent = 'Salvar no Banco';
     }
 });
+
+window.ajustarItem = function(docId) {
+    const item = currentItens.find(i => i.id === docId);
+    if (!item) return;
+
+    editingId = docId;
+    
+    // Preenche o formulário
+    document.getElementById('nome').value = item.nome;
+    document.getElementById('quantidade').value = 1;
+    document.getElementById('peso').value = item.peso;
+    document.getElementById('preco').value = item.precoUnitario.toFixed(2);
+    document.getElementById('dataEntrada').value = item.entrada;
+    document.getElementById('dataValidade').value = item.validade;
+    
+    // Seleciona a unidade correta
+    const radioUnidade = document.querySelector(`input[name="unidadeMedida"][value="${item.unidade}"]`);
+    if(radioUnidade) radioUnidade.checked = true;
+
+    // Sobe a tela suavemente para o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Muda o visual do botão
+    document.getElementById('btnSalvarTexto').textContent = 'Atualizar Item';
+    btnSalvarEstoque.style.backgroundColor = 'var(--sys-orange)';
+}
 
 window.removerItem = async function(docId) { // Expose for easy binding
     if (!currentUser) return;

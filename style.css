@@ -471,22 +471,57 @@ input:focus {
 .status-danger { background: var(--status-danger-bg); color: var(--status-danger-color); }
 .status-danger::before { background: var(--sys-red); }
 
-/* Delete Button */
-.btn-delete {
-    background-color: var(--sys-red);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 0.8rem;
+/* Glassmorphism Action Buttons */
+.btn-glass {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
 }
 
-.btn-delete:hover { transform: scale(1.05); background-color: var(--sys-red-active); }
-.btn-delete:active { transform: scale(0.95); }
+.btn-glass-blue {
+    background: rgba(10, 132, 255, 0.25);
+    color: #007AFF;
+    border-color: rgba(10, 132, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(10, 132, 255, 0.1);
+}
+
+.btn-glass-blue:hover {
+    background: rgba(10, 132, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(10, 132, 255, 0.2);
+}
+
+.btn-glass-green {
+    background: rgba(52, 199, 89, 0.2);
+    color: #248A3D;
+    border-color: rgba(52, 199, 89, 0.3);
+    box-shadow: 0 4px 15px rgba(52, 199, 89, 0.1);
+}
+
+.btn-glass-green:hover {
+    background: rgba(52, 199, 89, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 199, 89, 0.2);
+}
+
+.btn-glass:active {
+    transform: scale(0.95);
+}
+
+.table-actions {
+    display: flex;
+    gap: 8px;
+}
 
 /* 10. EMPTY STATES AND SPINNERS */
 .empty-state { text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 200px; }
