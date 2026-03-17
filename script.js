@@ -180,7 +180,8 @@ async function carregarEstoque() {
 
     try {
         const estoqueRef = collection(db, "estoque");
-        const q = query(estoqueRef, where("userId", "==", currentUser.uid), orderBy("validade", "asc"));
+        // Apenas filtra por usuário na nuvem (evita erro de Composite Index do Firebase ao misturar where e orderBy)
+        const q = query(estoqueRef, where("userId", "==", currentUser.uid));
         
         const querySnapshot = await getDocs(q);
         const itens = [];
@@ -188,6 +189,9 @@ async function carregarEstoque() {
         querySnapshot.forEach((doc) => {
             itens.push({ id: doc.id, ...doc.data() });
         });
+
+        // Ordena pela data de validade no próprio navegador (Client-side sorting)
+        itens.sort((a, b) => new Date(a.validade) - new Date(b.validade));
 
         if (itens.length === 0) {
             loadingState.style.display = 'none';
@@ -264,9 +268,11 @@ formCadastro.addEventListener('submit', async (e) => {
         document.getElementById('preco').value = '';
         document.getElementById('nome').focus();
         
-        carregarEstoque();
+        // Timeout para garantir que o Firebase propague antes do novo fetch
+        setTimeout(() => carregarEstoque(), 500);
     } catch (error) {
-        alert("Erro ao salvar.");
+        alert("Erro ao salvar o item: " + error.message);
+        console.error("Save Error:", error);
     } finally {
         btnSalvarEstoque.disabled = false;
         document.getElementById('btnSalvarTexto').textContent = 'Salvar Produto';
