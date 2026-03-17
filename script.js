@@ -641,17 +641,20 @@ function atualizarAnalytics(itens) {
     }
 
     // --- LÓGICA: PAINEL DE METAS EXTREMO ---
-    const metasGrid = document.getElementById('metasItemsGrid');
-    const metasSummaryTable = document.getElementById('metasSummaryTable');
-    const metasSummaryBody = document.getElementById('metasSummaryBody');
+    // --- LÓGICA: PAINEL DE METAS INLINE (TABELA) ---
+    // Clona o tbody para remover listeners antigos e evitar duplicações no reload
+    let oldSummaryBody = document.getElementById('metasSummaryBody');
+    let metasSummaryBody = oldSummaryBody.cloneNode(false);
+    oldSummaryBody.parentNode.replaceChild(metasSummaryBody, oldSummaryBody);
+    
+    // Removemos a referência ao metasGrid, visto que não usaremos mais cards isolados.
     const metasSummaryContainer = document.getElementById('metasSummaryContainer');
-    metasGrid.innerHTML = '';
-    metasSummaryBody.innerHTML = '';
     
     const metasStorageKey = `metas_${currentUser.uid}`;
     let metasSalvas = JSON.parse(localStorage.getItem(metasStorageKey)) || {};
 
-    let temMetasAtivas = false; // Flag para exibir a tabela
+    // Mostrar sempre o container da tabela (o grid foi removido)
+    metasSummaryContainer.style.display = 'block';
 
     // Função Utilitária Interna para deixar as medidas bonitas (ex: 1500g -> 1.5 Kg)
     function formatarMedida(valor, unidadeOriginal) {
@@ -673,93 +676,110 @@ function atualizarAnalytics(itens) {
         let sug1 = 12; let sug2 = 24;
         if(grupo.unidade === 'g' || grupo.unidade === 'ml') { sug1 = 12000; sug2 = 24000; }
         
-        const div = document.createElement('div');
-        div.className = 'meta-card';
-        div.innerHTML = `
-            <div class="meta-card-header" style="cursor: pointer;" onclick="document.getElementById('meta_body_${cardId}').classList.toggle('expandido')">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h4 style="margin: 0;">${grupo.nome}</h4>
-                    <span style="font-size: 1.2rem;">⬇️</span>
-                </div>
-                <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                     <span class="meta-current-badge">Estoque: ${formatarMedida(grupo.pesoTotal, grupo.unidade)}</span>
-                     <span id="resumo_meta_${cardId}" style="font-size: 0.85rem; color: var(--label-secondary); font-weight: 500;">
-                         ${metaAtual > 0 ? `Meta: ${formatarMedida(metaAtual, grupo.unidade)}` : 'Sem Meta 🎯'}
-                     </span>
-                </div>
-                <div class="meta-progress-container" style="margin-top: 10px;">
-                    <div class="meta-progress-bg" style="height: 6px;">
-                        <div class="meta-progress-fill" id="fill_${cardId}" style="width: 0%; border-radius: 4px;"></div>
-                    </div>
-                </div>
-            </div>
+        // 1. Linha Principal (Resumo)
+        let pct = metaAtual > 0 ? Math.min((grupo.pesoTotal / metaAtual) * 100, 100) : 0;
+        let corBarra = 'var(--sys-orange)';
+        if(pct >= 100) corBarra = 'var(--sys-green)';
+        else if (pct >= 50) corBarra = 'var(--sys-blue)';
+             
+        const trMain = document.createElement('tr');
+        trMain.id = `summary_row_${cardId}`;
+        
+        let hasMetaUI = metaAtual > 0 
+            ? `${formatarMedida(metaAtual, grupo.unidade)}` 
+            : `<span style="color:var(--label-secondary); font-size: 0.85em; font-weight: normal;">Sem Meta 🎯</span>`;
             
-            <div id="meta_body_${cardId}" class="meta-card-body" style="display: none; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px; margin-top: 10px;">
-                <div class="meta-input-row">
-                    <label>Defina a sua Meta (Total Desejado):</label>
-                    <div class="meta-input-group">
-                        <input type="number" class="input-meta" id="input_meta_${cardId}" value="${metaAtual}" min="0" step="0.5">
-                        <span>${grupo.unidade}</span>
-                    </div>
+        let progressHTML = metaAtual > 0 ? `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <div class="summary-progress-bar" style="flex: 1;">
+                    <div class="summary-progress-fill" id="table_fill_${cardId}" style="width: ${pct}%; background-color: ${corBarra};"></div>
                 </div>
-                
-                <button class="btn-sugestao btn-salvar-meta" data-nomeupper="${nomeUpper}" data-cardid="${cardId}" style="background-color: var(--sys-blue); color: white; border: none; width: 100%; margin-top: 10px; font-weight: bold;">
-                    💾 Salvar Meta
-                </button>
-                
-                <div class="meta-suggestions" style="margin-top: 15px;">
-                    <p>💡 Sugestões Rápidas:</p>
-                    <div class="meta-sug-buttons">
-                        <button class="btn-sugestao" data-target="${cardId}" data-val="${sug1}">1 Ano (+${formatarMedida(sug1, grupo.unidade)})</button>
-                        <button class="btn-sugestao" data-target="${cardId}" data-val="${sug2}">2 Anos (+${formatarMedida(sug2, grupo.unidade)})</button>
-                    </div>
+                <span id="table_status_${cardId}" style="font-size: 0.8rem; font-weight: 700; color: ${corBarra}; margin-left: auto;">${pct.toFixed(0)}%</span>
+            </div>
+        ` : `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <div class="summary-progress-bar" style="flex: 1;">
+                    <div class="summary-progress-fill" id="table_fill_${cardId}" style="width: 0%; background-color: var(--label-tertiary);"></div>
                 </div>
+                <span id="table_status_${cardId}" style="font-size: 0.8rem; font-weight: 700; color: var(--label-secondary); margin-left: auto;">--</span>
             </div>
         `;
-        metasGrid.appendChild(div);
+
+        trMain.innerHTML = `
+            <td><strong>${grupo.nome}</strong></td>
+            <td>${formatarMedida(grupo.pesoTotal, grupo.unidade)}</td>
+            <td id="table_meta_${cardId}">${hasMetaUI}</td>
+            <td>${progressHTML}</td>
+            <td style="text-align: right;">
+                <button class="btn-configurar-meta" data-configid="${cardId}" style="background: rgba(10, 132, 255, 0.1); color: var(--sys-blue); border: none; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">⚙️ Configurar</button>
+            </td>
+        `;
+        metasSummaryBody.appendChild(trMain);
         
-        let pct = 0;
-        if(metaAtual > 0) {
-             temMetasAtivas = true;
-             pct = Math.min((grupo.pesoTotal / metaAtual) * 100, 100);
-             let corBarra = 'var(--sys-orange)';
-             if(pct >= 100) corBarra = 'var(--sys-green)';
-             else if (pct >= 50) corBarra = 'var(--sys-blue)';
-             
-             const tr = document.createElement('tr');
-             tr.id = `summary_row_${cardId}`;
-             tr.innerHTML = `
-                 <td><strong>${grupo.nome}</strong></td>
-                 <td>${formatarMedida(grupo.pesoTotal, grupo.unidade)}</td>
-                 <td id="table_meta_${cardId}">${formatarMedida(metaAtual, grupo.unidade)}</td>
-                 <td>
-                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                         <div class="summary-progress-bar" style="flex: 1;">
-                             <div class="summary-progress-fill" id="table_fill_${cardId}" style="width: ${pct}%; background-color: ${corBarra};"></div>
-                         </div>
-                         <span id="table_status_${cardId}" style="font-size: 0.8rem; font-weight: 700; color: ${corBarra}; margin-left: auto;">${pct.toFixed(0)}%</span>
-                     </div>
-                 </td>
-             `;
-             metasSummaryBody.appendChild(tr);
+        // 2. Linha Oculta de Configuração
+        const trConfig = document.createElement('tr');
+        trConfig.id = `config_row_${cardId}`;
+        trConfig.style.display = 'none';
+        trConfig.style.backgroundColor = 'rgba(0,0,0,0.02)';
+        trConfig.innerHTML = `
+            <td colspan="5" style="padding: 15px 20px; border-top: none;">
+                <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; background: white; padding: 15px; border-radius: var(--radius-sm); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                    <div class="meta-input-row" style="margin-bottom: 0; min-width: 200px; flex: 1;">
+                        <label>Defina a Meta (Total Desejado):</label>
+                        <div class="meta-input-group">
+                            <input type="number" class="input-meta" id="input_meta_${cardId}" value="${metaAtual}" min="0" step="0.5">
+                            <span>${grupo.unidade}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-suggestions" style="border: none; padding-top: 0; margin-top: 0; flex: 2; min-width: 250px;">
+                        <p style="margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--label-secondary);">💡 Sugestões Rápidas:</p>
+                        <div class="meta-sug-buttons">
+                            <button class="btn-sugestao" data-target="${cardId}" data-val="${sug1}" style="border: 1px solid rgba(0,0,0,0.05);">1 Ano (+${formatarMedida(sug1, grupo.unidade)})</button>
+                            <button class="btn-sugestao" data-target="${cardId}" data-val="${sug2}" style="border: 1px solid rgba(0,0,0,0.05);">2 Anos (+${formatarMedida(sug2, grupo.unidade)})</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <button class="btn-salvar-meta" data-nomeupper="${nomeUpper}" data-cardid="${cardId}" style="background-color: var(--sys-blue); color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; height: 42px; display: flex; align-items: center; gap: 5px; transition: transform 0.2s;">
+                            💾 Salvar Meta
+                        </button>
+                    </div>
+                </div>
+            </td>
+        `;
+        metasSummaryBody.appendChild(trConfig);
+    });
+
+    // Eventos da Tabela Inline
+    metasSummaryBody.addEventListener('click', (e) => {
+        
+        // Evento 0: Abrir Configuração
+        if(e.target.classList.contains('btn-configurar-meta')) {
+             const cardId = e.target.getAttribute('data-configid');
+             const row = document.getElementById('config_row_' + cardId);
+             if(row) {
+                 const isClosed = row.style.display === 'none';
+                 // Fecha todas as outras configurações abertas (comportamento de acordeão)
+                 document.querySelectorAll('[id^="config_row_"]').forEach(r => r.style.display = 'none');
+                 document.querySelectorAll('.btn-configurar-meta').forEach(b => {
+                     b.innerHTML = '⚙️ Configurar';
+                     b.style.background = 'rgba(10, 132, 255, 0.1)';
+                 });
+                 
+                 if(isClosed) {
+                     row.style.display = 'table-row';
+                     e.target.innerHTML = '❌ Fechar';
+                     e.target.style.background = 'rgba(255, 59, 48, 0.1)'; // sys-red light
+                 }
+             }
         }
         
-        atualizarBarraProgresso(cardId, grupo.pesoTotal, metaAtual);
-    });
-    
-    // Mostra o container da tabela apenas se houver pelo menos uma meta configurada
-    if(temMetasAtivas) metasSummaryContainer.style.display = 'block';
-    else metasSummaryContainer.style.display = 'none';
-
-    // Remover listeners antigos clonando o grid (para evitar event listeners duplicados no reload do dashboard)
-    const novoMetasGrid = metasGrid.cloneNode(true);
-    metasGrid.parentNode.replaceChild(novoMetasGrid, metasGrid);
-
-    novoMetasGrid.addEventListener('click', (e) => {
         // Evento 1: Salvar Meta Manualmente
-        if (e.target.classList.contains('btn-salvar-meta')) {
-            const nomeUpper = e.target.getAttribute('data-nomeupper');
-            const cardId = e.target.getAttribute('data-cardid');
+        if (e.target.classList.contains('btn-salvar-meta') || e.target.closest('.btn-salvar-meta')) {
+            const btnSalvar = e.target.classList.contains('btn-salvar-meta') ? e.target : e.target.closest('.btn-salvar-meta');
+            const nomeUpper = btnSalvar.getAttribute('data-nomeupper');
+            const cardId = btnSalvar.getAttribute('data-cardid');
             const inputElement = document.getElementById('input_meta_' + cardId);
             const novaMeta = Number(inputElement.value);
             
@@ -770,82 +790,56 @@ function atualizarAnalytics(itens) {
             const grupo = itensAgrupados[nomeUpper];
             const pesoTotalAtual = grupo ? grupo.pesoTotal : 0;
             
-            atualizarBarraProgresso(cardId, pesoTotalAtual, novaMeta);
+            // Re-render UI na Tabela para esta linha!
+            let pct = novaMeta > 0 ? Math.min((pesoTotalAtual / novaMeta) * 100, 100) : 0;
+            let corBarra = 'var(--sys-orange)';
+            if(pct >= 100) corBarra = 'var(--sys-green)';
+            else if (pct >= 50) corBarra = 'var(--sys-blue)';
             
-            // Atualizar os labels numéricos
-            const resumoAvo = document.getElementById('resumo_meta_' + cardId);
-            if(resumoAvo) {
-                 resumoAvo.textContent = novaMeta > 0 ? `Meta: ${formatarMedida(novaMeta, grupo.unidade)}` : 'Sem Meta 🎯';
+            const tableMeta = document.getElementById(`table_meta_${cardId}`);
+            if(novaMeta > 0) {
+                 tableMeta.innerHTML = formatarMedida(novaMeta, grupo.unidade);
+            } else {
+                 tableMeta.innerHTML = `<span style="color:var(--label-secondary); font-size: 0.85em; font-weight: normal;">Sem Meta 🎯</span>`;
+                 corBarra = 'var(--label-tertiary)';
             }
             
-            // Fecha a sanfona
-            document.getElementById('meta_body_' + cardId).classList.remove('expandido');
+            const tableFill = document.getElementById(`table_fill_${cardId}`);
+            const tableStatus = document.getElementById(`table_status_${cardId}`);
+            if(tableFill) {
+                tableFill.style.width = `${pct}%`;
+                tableFill.style.backgroundColor = corBarra;
+            }
+            if(tableStatus) {
+                tableStatus.textContent = novaMeta > 0 ? `${pct.toFixed(0)}%` : '--';
+                tableStatus.style.color = novaMeta > 0 ? corBarra : 'var(--label-secondary)';
+            }
             
-            // Dá feedback visual rápido
-            const btnOriginal = e.target.innerHTML;
-            e.target.innerHTML = "✅ Salvo!";
-            setTimeout(() => { e.target.innerHTML = btnOriginal; }, 1500);
+            // Fecha a linha de config e reseta botão
+            document.getElementById('config_row_' + cardId).style.display = 'none';
+            const btnConfig = document.querySelector(`.btn-configurar-meta[data-configid="${cardId}"]`);
+            if(btnConfig) {
+                 btnConfig.innerHTML = '✅ Salvo!';
+                 btnConfig.style.background = 'rgba(52, 199, 89, 0.1)'; // green
+                 setTimeout(() => { 
+                     btnConfig.innerHTML = '⚙️ Configurar'; 
+                     btnConfig.style.background = 'rgba(10, 132, 255, 0.1)';
+                 }, 2000);
+            }
         }
         
         // Evento 2: Clicar para Sugestão Automática
-        if (e.target.classList.contains('btn-sugestao') && !e.target.classList.contains('btn-salvar-meta')) {
+        if (e.target.classList.contains('btn-sugestao')) {
             const targetId = e.target.getAttribute('data-target');
             const valorSugerido = e.target.getAttribute('data-val');
             const inputMeta = document.getElementById('input_meta_' + targetId);
             if(inputMeta) {
                 inputMeta.value = valorSugerido;
-                inputMeta.dispatchEvent(new Event('input', { bubbles: true }));
+                // Como não usamos mais evento 'input' na tabela para auto-save, não precisamos despachar o evento.
+                // O usuário ainda precisa clicar em "Salvar Meta" após clicar na sugestão.
             }
         }
     });
-
-    function atualizarBarraProgresso(cardId, pesoAtual, meta) {
-        const fillEl = document.getElementById('fill_' + cardId);
-        if(!fillEl) return;
-        
-        if (meta <= 0) {
-            fillEl.style.width = '0%';
-            fillEl.style.backgroundColor = 'var(--sys-orange)';
-            // Apagar linha da tabela se meta for zerada agora
-            const row = document.getElementById(`summary_row_${cardId}`);
-            if(row) row.remove();
-            
-            // Re-checar se esconde container
-            if (metasSummaryBody.children.length === 0) {
-                 metasSummaryContainer.style.display = 'none';
-            }
-            return;
-        }
-        
-        let pct = (pesoAtual / meta) * 100;
-        if(pct > 100) pct = 100;
-        
-        fillEl.style.width = `${pct}%`;
-        
-        let cor = 'var(--sys-orange)';
-        if (pct >= 100) cor = 'var(--sys-green)';
-        else if (pct >= 50) cor = 'var(--sys-blue)';
-        
-        fillEl.style.backgroundColor = cor;
-        
-        // Atualiza ou injeta na Tabela
-        metasSummaryContainer.style.display = 'block'; // Garante display
-        
-        let row = document.getElementById(`summary_row_${cardId}`);
-        if(row) {
-            document.getElementById(`table_meta_${cardId}`).textContent = formatarMedida(meta, document.getElementById('input_meta_'+cardId).nextElementSibling.textContent); // Pega unidade do DOM
-            const tableFill = document.getElementById(`table_fill_${cardId}`);
-            const tableStatus = document.getElementById(`table_status_${cardId}`);
-            tableFill.style.width = `${pct}%`;
-            tableFill.style.backgroundColor = cor;
-            tableStatus.textContent = `${pct.toFixed(0)}%`;
-            tableStatus.style.color = cor;
-        } else {
-            // Se foi uma meta nova recriada dinamicamente, dá um resync (carregarEstoque já chama gerarDahsboard de qq forma em save real, mas na meta local a gente pode só mandar re-renderizar o painel inteiro)
-            // Forma preguiçosa e garantida de re-montar a tabela local:
-            setTimeout(() => atualizarAnalytics(itens), 200);
-        }
-    }
 
     // Chama a função que gera e injeta os novos gráficos gerenciais
     gerarDashboard();
