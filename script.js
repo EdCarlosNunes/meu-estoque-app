@@ -439,25 +439,8 @@ function atualizarAnalytics(itens) {
 
     // --- LÓGICA DOS WIDGETS INTELIGENTES ---
     
-    // WIDGET 2: Carga Física Total & Meta
-    const metaKg = 50; // Meta fixa como exemplo, pode virar campo depois
+    // WIDGET 2: Carga Física Bruta
     document.getElementById('pesoTotalEstoque').textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
-    
-    let porcentagemMeta = (pesoFisicoTotal / metaKg) * 100;
-    if (porcentagemMeta > 100) porcentagemMeta = 100;
-    
-    document.getElementById('metaValue').textContent = `${Math.round(porcentagemMeta)}%`;
-    document.getElementById('metaCircle').style.background = `conic-gradient(var(--sys-blue) ${porcentagemMeta * 3.6}deg, rgba(0,0,0,0.05) 0deg)`;
-    
-    const faltaKg = metaKg - pesoFisicoTotal;
-    if (faltaKg > 0) {
-        document.getElementById('metaFalta').textContent = `Faltam ${faltaKg.toFixed(1)}kg`;
-        document.getElementById('metaFalta').style.color = "var(--label-tertiary)";
-    } else {
-        document.getElementById('metaFalta').textContent = "Meta Atingida! 🎉";
-        document.getElementById('metaFalta').style.color = "var(--sys-green)";
-        document.getElementById('metaCircle').style.background = `conic-gradient(var(--sys-green) 360deg, rgba(0,0,0,0.05) 0deg)`;
-    }
 
     // WIDGET 1: Calculadora de Autonomia
     const consumoPorPessoaDiaKg = 1.5;
@@ -650,6 +633,122 @@ function atualizarAnalytics(itens) {
                 }
             }
         });
+    }
+
+    // --- LÓGICA: PAINEL DE METAS EXTREMO ---
+    const metasGrid = document.getElementById('metasItemsGrid');
+    metasGrid.innerHTML = '';
+    const metasStorageKey = `metas_${currentUser.uid}`;
+    let metasSalvas = JSON.parse(localStorage.getItem(metasStorageKey)) || {};
+
+    Object.entries(itensAgrupados).forEach(([nomeUpper, grupo]) => {
+        // ID seguro para o DOM (letras e num)
+        const cardId = grupo.nome.replace(/[^a-zA-Z0-9]/g, ''); 
+        if(!cardId) return;
+        
+        let metaAtual = metasSalvas[nomeUpper] || 0;
+        
+        // Sugestão basicona de preenchimento (depende da unidade)
+        let sug1 = 12; let sug2 = 24;
+        if(grupo.unidade === 'g' || grupo.unidade === 'ml') { sug1 = 12000; sug2 = 24000; }
+        
+        const div = document.createElement('div');
+        div.className = 'meta-card';
+        div.innerHTML = `
+            <div class="meta-card-header">
+                <h4>${grupo.nome}</h4>
+                <span class="meta-current-badge">Estoque: ${grupo.pesoTotal.toFixed(1)} ${grupo.unidade}</span>
+            </div>
+            <div class="meta-input-row">
+                <label>Defina a sua Meta (Total Desejado):</label>
+                <div class="meta-input-group">
+                    <input type="number" class="input-meta" id="input_meta_${cardId}" data-nomeupper="${nomeUpper}" data-cardid="${cardId}" value="${metaAtual}" min="0" step="0.5">
+                    <span>${grupo.unidade}</span>
+                </div>
+            </div>
+            <div class="meta-progress-container">
+                <div class="meta-progress-bg">
+                    <div class="meta-progress-fill" id="fill_${cardId}" style="width: 0%;"></div>
+                </div>
+                <span class="meta-status-text" id="status_${cardId}">0%</span>
+            </div>
+            
+            <div class="meta-suggestions">
+                <p>💡 Preenchimento Rápido (Sugestão):</p>
+                <div class="meta-sug-buttons">
+                    <button class="btn-sugestao" data-target="${cardId}" data-val="${sug1}">Meta 1 Ano (+${sug1})</button>
+                    <button class="btn-sugestao" data-target="${cardId}" data-val="${sug2}">Meta 2 Anos (+${sug2})</button>
+                </div>
+            </div>
+        `;
+        metasGrid.appendChild(div);
+        
+        atualizarBarraProgresso(cardId, grupo.pesoTotal, metaAtual);
+    });
+
+    // Remover listeners antigos clonando o grid (para evitar event listeners duplicados no reload do dashboard)
+    const novoMetasGrid = metasGrid.cloneNode(true);
+    metasGrid.parentNode.replaceChild(novoMetasGrid, metasGrid);
+
+    novoMetasGrid.addEventListener('input', (e) => {
+        if (e.target.classList.contains('input-meta')) {
+            const nomeUpper = e.target.getAttribute('data-nomeupper');
+            const cardId = e.target.getAttribute('data-cardid');
+            const novaMeta = Number(e.target.value);
+            
+            let metas = JSON.parse(localStorage.getItem(metasStorageKey)) || {};
+            metas[nomeUpper] = novaMeta;
+            localStorage.setItem(metasStorageKey, JSON.stringify(metas));
+            
+            const grupo = itensAgrupados[nomeUpper];
+            const pesoTotalAtual = grupo ? grupo.pesoTotal : 0;
+            atualizarBarraProgresso(cardId, pesoTotalAtual, novaMeta);
+        }
+    });
+
+    novoMetasGrid.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-sugestao')) {
+            const targetId = e.target.getAttribute('data-target');
+            const valorSugerido = e.target.getAttribute('data-val');
+            const inputMeta = document.getElementById('input_meta_' + targetId);
+            if(inputMeta) {
+                inputMeta.value = valorSugerido;
+                inputMeta.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    });
+
+    function atualizarBarraProgresso(cardId, pesoAtual, meta) {
+        const fillEl = document.getElementById('fill_' + cardId);
+        const statusEl = document.getElementById('status_' + cardId);
+        if(!fillEl || !statusEl) return;
+        
+        if (meta <= 0) {
+            fillEl.style.width = '0%';
+            fillEl.style.backgroundColor = 'var(--sys-orange)';
+            statusEl.textContent = 'Sem Meta 🎯';
+            statusEl.style.color = 'var(--label-secondary)';
+            return;
+        }
+        
+        let pct = (pesoAtual / meta) * 100;
+        if(pct > 100) pct = 100;
+        
+        fillEl.style.width = `${pct}%`;
+        
+        if (pct >= 100) {
+            fillEl.style.backgroundColor = 'var(--sys-green)';
+            statusEl.textContent = '🎯 Meta Batida! (100%+)';
+            statusEl.style.color = 'var(--sys-green)';
+        } else if (pct >= 50) {
+            fillEl.style.backgroundColor = 'var(--sys-blue)';
+            statusEl.textContent = `${pct.toFixed(0)}% Alcançado`;
+            statusEl.style.color = 'var(--sys-blue)';
+        } else {
+            fillEl.style.backgroundColor = 'var(--sys-orange)';
+            statusEl.textContent = `${pct.toFixed(0)}% (Baixo)`;
+            statusEl.style.color = 'var(--sys-orange)';
+        }
     }
 
     // Chama a função que gera e injeta os novos gráficos gerenciais

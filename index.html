@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=6">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -238,16 +238,6 @@
                                     <span class="carga-unidade">Kg</span>
                                 </div>
                             </div>
-                            <!-- Mini Meta Circular -->
-                            <div class="meta-tracker">
-                                <div class="circular-progress" id="metaCircle">
-                                    <span class="progress-value" id="metaValue">0%</span>
-                                </div>
-                                <div class="meta-texto">
-                                    <p>Meta: <span id="metaTarget">50</span>kg</p>
-                                    <p class="legenda-micro" id="metaFalta">Faltam 50kg</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -283,9 +273,21 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Painel de Metas de Sobrevivência -->
+            <section class="panel glass-panel metas-panel fade-in-up" id="metasPanel" style="display: none;">
+                <div class="panel-header">
+                    <h2>🎯 Planejamento de Metas de Longo Prazo</h2>
+                    <p class="legenda-micro" style="margin-top: 5px;">Configure exatamente quanto você quer ter de cada produto e veja a sugestão mágica de estocagem para 1 e 2 anos.</p>
+                </div>
+                
+                <div class="metas-items-grid" id="metasItemsGrid">
+                    <!-- Preenchido via Javascript -->
+                </div>
+            </section>
         </main>
     </div>
 
-    <script type="module" src="script.js?v=4"></script>
+    <script type="module" src="script.js?v=5"></script>
 </body>
 </html>
