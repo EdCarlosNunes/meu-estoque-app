@@ -556,7 +556,7 @@ input:focus {
     
     body, html { 
         width: 100%; 
-        max-width: 100vw; 
+        max-width: 100%; 
         overflow-x: hidden; 
         margin: 0; 
         padding: 0; 
