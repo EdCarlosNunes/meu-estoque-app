@@ -44,6 +44,11 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+    overflow-x: hidden;
+    width: 100%;
+}
+
 /* 3. BASE STYLES & iOS 26 BACKGROUND */
 body {
     background: 
@@ -68,7 +73,16 @@ body {
 }
 
 /* 2. DYNAMIC MESH BACKGROUND */
-/* Removed .ios-background as it's replaced by body background */
+.ios-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+}
 
 .blob {
     position: absolute;
