@@ -68,12 +68,25 @@ tabRegisterInput.addEventListener('change', () => {
     authError.textContent = '';
 });
 
+// Validação de senha forte
+function validarSenhaForte(senha) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(senha);
+}
+
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     
     authError.textContent = '';
+
+    // Bloqueia a criação se a senha for fraca (apenas no modo de cadastro)
+    if (!isLoginMode && !validarSenhaForte(password)) {
+        authError.textContent = 'A senha deve ter mín. 8 caracteres, maiúscula, minúscula, número e símbolo (@$!%*?&).';
+        return;
+    }
+
     btnAcaoAuth.disabled = true;
     btnAcaoAuth.textContent = 'Aguarde...';
 
