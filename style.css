@@ -715,15 +715,42 @@ input:focus {
     color: var(--label-secondary);
 }
 
-.mini-input {
-    width: 70px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    border: 1px solid rgba(0,0,0,0.1);
+.input-with-unit {
+    display: flex;
+    align-items: center;
     background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.mini-input {
+    width: 60px;
+    padding: 6px 4px;
+    border: none;
+    background: transparent;
     font-weight: 700;
     color: var(--sys-blue);
     text-align: center;
+    outline: none;
+}
+
+.mini-select {
+    border: none;
+    background: rgba(0,0,0,0.03);
+    border-radius: 6px;
+    padding: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--sys-blue);
+    outline: none;
+    cursor: pointer;
+}
+
+.per-day {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--label-tertiary);
 }
 
 .autonomia-result { text-align: center; margin-top: 5px; }
