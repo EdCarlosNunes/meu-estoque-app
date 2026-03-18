@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
     <link rel="icon" href="apple.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -281,13 +281,13 @@
                             <span class="widget-icon">⚖️</span>
                             <h3>Carga Física Total</h3>
                         </div>
-                        <div class="widget-body carga-body">
-                            <div class="carga-display">
-                                <span id="pesoTotalDesc">O peso bruto da sua despensa é de:</span>
-                                <div class="carga-valor">
-                                    <span id="pesoTotalEstoque">0</span>
-                                    <span class="carga-unidade">Kg</span>
-                                </div>
+                        <div class="widget-body weight-widget-body">
+                            <p class="widget-desc">O peso bruto da sua despensa é de:</p>
+                            <div class="weight-display">
+                                <span id="pesoTotalInfo">0,0</span><small>Kg</small>
+                            </div>
+                            <div class="chart-pie-container">
+                                <canvas id="chartPesoDistribuicao"></canvas>
                             </div>
                         </div>
                     </div>
@@ -327,6 +327,6 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=17"></script>
+    <script type="module" src="script.js?v=18"></script>
 </body>
 </html>

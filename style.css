@@ -758,11 +758,42 @@ input:focus {
 
 /* Carga Física e Meta */
 .carga-body { align-items: center; }
-.carga-display { text-align: center; margin-bottom: 15px; }
-#pesoTotalDesc { font-size: 0.85rem; color: var(--label-secondary); }
-.carga-valor { margin-top: 5px; }
-#pesoTotalEstoque { font-size: 2.5rem; font-weight: 800; color: var(--sys-orange); letter-spacing: -1px; }
-.carga-unidade { font-size: 1.2rem; font-weight: 600; color: var(--label-secondary); margin-left: -5px; }
+.weight-widget-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+}
+
+.weight-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+}
+
+.weight-display span {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--sys-orange);
+    letter-spacing: -2px;
+}
+
+.weight-display small {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--label-tertiary);
+    margin-left: 5px;
+}
+
+.chart-pie-container {
+    width: 100%;
+    max-width: 220px;
+    margin: 0 auto;
+    position: relative;
+    height: 180px;
+}
 
 /* Assistente FIFO */
 .fifo-header { justify-content: space-between; flex-wrap: wrap; }

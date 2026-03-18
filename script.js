@@ -548,8 +548,19 @@ function atualizarAnalytics(itens) {
     const selectUnidadeConsumo = document.getElementById('selectUnidadeConsumo');
     const resultadoAutonomia = document.getElementById('resultadoAutonomia');
 
-    // Popular o seletor com itens únicos
-    // ... (rest of population logic) ...
+        // Popular o seletor com itens únicos
+        const currentSelected = selectAlimento.value;
+        selectAlimento.innerHTML = '<option value="todos">Toda a Despensa</option>';
+        Object.values(itensAgrupados).forEach(grupo => {
+            const opt = document.createElement('option');
+            opt.value = grupo.nome;
+            opt.textContent = grupo.nome;
+            selectAlimento.appendChild(opt);
+        });
+        // Tenta manter a seleção anterior se ela ainda existir
+        if (currentSelected && [...selectAlimento.options].some(o => o.value === currentSelected)) {
+            selectAlimento.value = currentSelected;
+        }
 
     function calcularDiasAutonomia() {
         const qtdPessoas = parseInt(sliderPessoas.value);
@@ -584,7 +595,7 @@ function atualizarAnalytics(itens) {
 
         const consumoTotalDia = qtdPessoas * consumoPorPessoa;
         const diasEstimados = Math.floor(pesoAlvo / consumoTotalDia);
-        resultadoAutonomia.textContent = `${diasEstimados} dias`;
+        resultadoAutonomia.textContent = diasEstimados === 1 ? '1 dia' : `${diasEstimados} dias`;
         
         // Mudar cor baseado nos dias
         // ... (rest of color logic) ...
