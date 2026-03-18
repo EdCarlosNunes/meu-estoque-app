@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
     <link rel="icon" href="apple.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=16">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -242,6 +242,12 @@
                             <h3>Calculadora de Autonomia</h3>
                         </div>
                         <div class="widget-body">
+                            <div class="widget-selector-row">
+                                <label for="selectAlimentoAutonomia">Analisar:</label>
+                                <select id="selectAlimentoAutonomia" class="ios-select">
+                                    <option value="todos">Toda a Despensa</option>
+                                </select>
+                            </div>
                             <p class="widget-desc">Estoque estimado para sustentar:</p>
                             <div class="slider-container">
                                 <div class="slider-row">
@@ -312,6 +318,6 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=15"></script>
+    <script type="module" src="script.js?v=16"></script>
 </body>
 </html>

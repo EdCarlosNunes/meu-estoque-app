@@ -541,24 +541,56 @@ function atualizarAnalytics(itens) {
 
     // WIDGET 1: Calculadora de Autonomia
     // WIDGET 1: Calculadora de Autonomia
+    const selectAlimento = document.getElementById('selectAlimentoAutonomia');
     const sliderPessoas = document.getElementById('sliderPessoas');
     const labelPessoas = document.getElementById('labelPessoas');
     const inputConsumoDiario = document.getElementById('inputConsumoDiario');
     const resultadoAutonomia = document.getElementById('resultadoAutonomia');
 
+    // Popular o seletor com itens únicos
+    const nomesUnicos = [...new Set(itens.map(i => i.nome))].sort();
+    const valorAtual = selectAlimento.value;
+    
+    // Limpar e repopular mantendo a opção "Todos"
+    selectAlimento.innerHTML = '<option value="todos">Toda a Despensa</option>';
+    nomesUnicos.forEach(nome => {
+        const option = document.createElement('option');
+        option.value = nome;
+        option.textContent = nome;
+        selectAlimento.appendChild(option);
+    });
+    // Tentar restaurar o valor que estava selecionado
+    if ([...selectAlimento.options].some(o => o.value === valorAtual)) {
+        selectAlimento.value = valorAtual;
+    }
+
     function calcularDiasAutonomia() {
         const qtdPessoas = parseInt(sliderPessoas.value);
         const consumoPorPessoa = parseFloat(inputConsumoDiario.value) || 1.5;
+        const alimentoSelecionado = selectAlimento.value;
         
         labelPessoas.textContent = qtdPessoas === 1 ? '1 pessoa' : `${qtdPessoas} pessoas`;
         
-        if (pesoFisicoTotal <= 0) {
+        // Calcular peso baseado no filtro
+        let pesoAlvo = 0;
+        if (alimentoSelecionado === 'todos') {
+            pesoAlvo = pesoFisicoTotal;
+        } else {
+            // Soma apenas do alimento selecionado
+            itens.filter(i => i.nome === alimentoSelecionado).forEach(i => {
+                let p = Number(i.peso);
+                if (i.unidade === 'g' || i.unidade === 'ml') p /= 1000;
+                pesoAlvo += p;
+            });
+        }
+
+        if (pesoAlvo <= 0) {
             resultadoAutonomia.textContent = "-- dias";
             return;
         }
 
         const consumoTotalDia = qtdPessoas * consumoPorPessoa;
-        const diasEstimados = Math.floor(pesoFisicoTotal / consumoTotalDia);
+        const diasEstimados = Math.floor(pesoAlvo / consumoTotalDia);
         resultadoAutonomia.textContent = `${diasEstimados} dias`;
         
         // Mudar cor baseado nos dias
@@ -567,12 +599,10 @@ function atualizarAnalytics(itens) {
         else resultadoAutonomia.style.color = "var(--sys-green)";
     }
     
-    // Adicionar listeners APENAS se ainda não existirem (usando flag ou resetando via evento)
-    // Para simplificar e garantir que funcione, removemos e adicionamos o listener
     sliderPessoas.oninput = calcularDiasAutonomia;
     inputConsumoDiario.oninput = calcularDiasAutonomia;
+    selectAlimento.onchange = calcularDiasAutonomia;
     
-    // Chamada inicial para atualizar os números com base no novo peso total
     calcularDiasAutonomia();
 
     // WIDGET 3: Assistente FIFO (O que comer primeiro)
