@@ -314,7 +314,7 @@ formCadastro.addEventListener('submit', async (e) => {
                 unidade: unidade,
                 entrada: entrada,
                 validade: validade,
-                precoUnitario: precoUnitario / quantidade // Ajusta se a quantidade mudar, mas edição costuma ser 1 a 1
+                precoUnitario: precoUnitario // Preço unitário direto
             });
             editingId = null;
         } else {
@@ -328,7 +328,7 @@ formCadastro.addEventListener('submit', async (e) => {
                     unidade: unidade,
                     entrada: entrada,
                     validade: validade,
-                    precoUnitario: precoUnitario,
+                    precoUnitario: precoUnitario, // Preço unitário direto
                     timestamp: Date.now()
                 }));
             }
