@@ -37,6 +37,7 @@ const estoqueBody = document.getElementById('estoqueBody');
 const loadingState = document.getElementById('loadingState');
 const emptyState = document.getElementById('emptyState');
 const tableContainer = document.querySelector('.table-container');
+const btnExportarCSV = document.getElementById('btnExportarCSV');
 
 // Analytics DOM
 const analyticsPanel = document.getElementById('analyticsPanel');
@@ -245,6 +246,43 @@ async function carregarEstoque() {
         console.error("Erro na busca", error);
         loadingState.innerHTML = `<p style="color:red">Ocorreu um problema ao baixar. Tentando novamente...</p>`;
     }
+}
+
+// ==========================================
+// FUNÇÃO DE EXPORTAÇÃO CSV
+// ==========================================
+window.baixarCSV = function() {
+    if (currentItens.length === 0) {
+        alert("Não há dados para exportar.");
+        return;
+    }
+
+    // Cabeçalho do CSV
+    let csv = "Alimento;Peso;Unidade;Data Entrada;Data Validade;Preco Unitario\n";
+
+    // Conteúdo
+    currentItens.forEach(item => {
+        csv += `${item.nome};${item.peso};${item.unidade};${item.entrada};${item.validade};${item.precoUnitario.toFixed(2).replace('.', ',')}\n`;
+    });
+
+    // Criar o arquivo e link de download
+    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    const dataHoje = new Date().toISOString().split('T')[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `estoque_food_data_${dataHoje}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+if (btnExportarCSV) {
+    btnExportarCSV.addEventListener('click', baixarCSV);
 }
 
 formCadastro.addEventListener('submit', async (e) => {
