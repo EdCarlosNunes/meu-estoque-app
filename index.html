@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
     <link rel="icon" href="apple.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -240,13 +240,19 @@
                         <div class="widget-body">
                             <p class="widget-desc">Estoque estimado para sustentar:</p>
                             <div class="slider-container">
-                                <input type="range" id="sliderPessoas" min="1" max="10" value="1" class="ios-slider">
-                                <span id="labelPessoas" class="slider-val-badge">1 pessoa</span>
+                                <div class="slider-row">
+                                    <input type="range" id="sliderPessoas" min="1" max="50" value="1" class="ios-slider">
+                                    <span id="labelPessoas" class="slider-val-badge">1 pessoa</span>
+                                </div>
+                                <div class="consumption-setting">
+                                    <label for="inputConsumoDiario">Consumo/Pessoa (Kg/dia):</label>
+                                    <input type="number" id="inputConsumoDiario" value="1.5" step="0.1" min="0.1" class="mini-input">
+                                </div>
                             </div>
                             <div class="autonomia-result">
                                 <span id="resultadoAutonomia" class="resultado-highlight">-- dias</span>
                             </div>
-                            <p class="legenda-micro">*Base: 1.5kg de alimento/dia/pessoa</p>
+                            <p class="legenda-micro" id="legendaBase">*Cálculo baseado no consumo configurado acima</p>
                         </div>
                     </div>
 
@@ -302,6 +308,6 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=12"></script>
+    <script type="module" src="script.js?v=13"></script>
 </body>
 </html>

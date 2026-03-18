@@ -633,8 +633,9 @@ input:focus {
 .widget-desc { font-size: 0.9rem; color: var(--label-secondary); margin-bottom: 10px; font-weight: 500;}
 .legenda-micro { font-size: 0.75rem; color: var(--label-tertiary); margin-top: 5px; }
 
-/* Autonomia Slider */
-.slider-container { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+/* Autonomia Slider & Settings */
+.slider-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+.slider-row { display: flex; align-items: center; gap: 15px; }
 .ios-slider {
     flex: 1;
     -webkit-appearance: none;
@@ -664,7 +665,32 @@ input:focus {
     border-radius: 12px;
     font-size: 0.85rem;
     font-weight: 700;
-    min-width: 80px;
+    min-width: 90px;
+    text-align: center;
+}
+
+.consumption-setting {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0,0,0,0.05);
+}
+
+.consumption-setting label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--label-secondary);
+}
+
+.mini-input {
+    width: 70px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.8);
+    font-weight: 700;
+    color: var(--sys-blue);
     text-align: center;
 }
 

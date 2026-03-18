@@ -502,13 +502,16 @@ function atualizarAnalytics(itens) {
     document.getElementById('pesoTotalEstoque').textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
 
     // WIDGET 1: Calculadora de Autonomia
-    const consumoPorPessoaDiaKg = 1.5;
+    // WIDGET 1: Calculadora de Autonomia
     const sliderPessoas = document.getElementById('sliderPessoas');
     const labelPessoas = document.getElementById('labelPessoas');
+    const inputConsumoDiario = document.getElementById('inputConsumoDiario');
     const resultadoAutonomia = document.getElementById('resultadoAutonomia');
 
     function calcularDiasAutonomia() {
         const qtdPessoas = parseInt(sliderPessoas.value);
+        const consumoPorPessoa = parseFloat(inputConsumoDiario.value) || 1.5;
+        
         labelPessoas.textContent = qtdPessoas === 1 ? '1 pessoa' : `${qtdPessoas} pessoas`;
         
         if (pesoFisicoTotal <= 0) {
@@ -516,7 +519,7 @@ function atualizarAnalytics(itens) {
             return;
         }
 
-        const consumoTotalDia = qtdPessoas * consumoPorPessoaDiaKg;
+        const consumoTotalDia = qtdPessoas * consumoPorPessoa;
         const diasEstimados = Math.floor(pesoFisicoTotal / consumoTotalDia);
         resultadoAutonomia.textContent = `${diasEstimados} dias`;
         
@@ -526,23 +529,13 @@ function atualizarAnalytics(itens) {
         else resultadoAutonomia.style.color = "var(--sys-green)";
     }
     
-    // Remover event listeners antigos para evitar duplicação em re-renderizações
-    const novoSlider = sliderPessoas.cloneNode(true);
-    sliderPessoas.parentNode.replaceChild(novoSlider, sliderPessoas);
-    novoSlider.addEventListener('input', calcularDiasAutonomia);
+    // Adicionar listeners APENAS se ainda não existirem (usando flag ou resetando via evento)
+    // Para simplificar e garantir que funcione, removemos e adicionamos o listener
+    sliderPessoas.oninput = calcularDiasAutonomia;
+    inputConsumoDiario.oninput = calcularDiasAutonomia;
     
-    // Chamada inicial
-    // Recapturar referência após o clone
-    document.getElementById('sliderPessoas').value = "1"; 
-    document.getElementById('labelPessoas').textContent = "1 pessoa";
-    // Chama o recálculo inicial baseado nos dados frescos
-    const initialQtdPessoas = 1;
-    if (pesoFisicoTotal > 0) {
-         const initialDias = Math.floor(pesoFisicoTotal / (initialQtdPessoas * consumoPorPessoaDiaKg));
-         resultadoAutonomia.textContent = `${initialDias} dias`;
-    } else {
-         resultadoAutonomia.textContent = "-- dias";
-    }
+    // Chamada inicial para atualizar os números com base no novo peso total
+    calcularDiasAutonomia();
 
     // WIDGET 3: Assistente FIFO (O que comer primeiro)
     const listaFifo = document.getElementById('listaFifo');
