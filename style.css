@@ -636,8 +636,33 @@ input:focus {
 .widget-icon { font-size: 1.4rem; }
 .widget-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--label-primary); letter-spacing: -0.3px; }
 
-.widget-body { flex: 1; display: flex; flex-direction: column; justify-content: center;}
-.widget-desc { font-size: 0.9rem; color: var(--label-secondary); margin-bottom: 10px; font-weight: 500;}
+.widget-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.widget-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(0,0,0,0.05);
+}
+.widget-selector-row label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--label-secondary);
+}
+.ios-select {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sys-blue);
+    outline: none;
+    cursor: pointer;
+}
+.widget-desc { font-size: 0.85rem; color: var(--label-secondary); margin-bottom: 5px; font-weight: 500;}
 .legenda-micro { font-size: 0.75rem; color: var(--label-tertiary); margin-top: 5px; }
 
 /* Autonomia Slider & Settings */
