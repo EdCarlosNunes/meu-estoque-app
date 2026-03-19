@@ -1053,6 +1053,10 @@ input:focus {
     #analyticsPanel.tab-active {
         display: flex !important;
         flex-direction: column;
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
     }
 
     /* == FORMULÁRIO == */
@@ -1163,7 +1167,7 @@ input:focus {
     }
 
     .smart-widgets-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
     /* == AUTH == */

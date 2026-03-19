@@ -207,10 +207,19 @@ async function carregarEstoque() {
             loadingState.style.display = 'none';
             emptyState.style.display = 'block';
         } else {
+            const isMobile = window.innerWidth <= 768;
             loadingState.style.display = 'none';
-            tableContainer.style.display = 'block';
-            analyticsPanel.style.display = 'block';
-            
+
+            // No desktop, mostra direto. No mobile, o tab system controla via .tab-active
+            if (!isMobile) {
+                tableContainer.style.display = 'block';
+                analyticsPanel.style.display = 'block';
+            } else {
+                // Remove inline styles para o CSS !important do mobile funcionar
+                tableContainer.style.removeProperty('display');
+                analyticsPanel.style.removeProperty('display');
+            }
+
             currentItens = itens;
 
             // Estado atual do filtro (default: validade)
