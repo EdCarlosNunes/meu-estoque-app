@@ -360,9 +360,11 @@ input:focus {
 
 .split-layout {
     display: grid;
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: minmax(280px, 350px) 1fr;
     gap: 20px;
     align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .panel { padding: 25px; display: flex; flex-direction: column;}
@@ -938,6 +940,19 @@ input:focus {
 @media (max-width: 1024px) {
     .split-layout { grid-template-columns: 1fr; }
     .charts-grid { grid-template-columns: 1fr; }
+}
+
+/* Telas médias: tablet e laptops pequenos (769px - 1100px) */
+@media (min-width: 769px) and (max-width: 1100px) {
+    .split-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .form-panel {
+        max-width: 600px;
+        width: 100%;
+        margin: 0 auto;
+    }
 }
 
 
