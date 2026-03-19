@@ -48,13 +48,19 @@ let currentUser = null;
 let chartValidadeInstance = null;
 let chartReposicaoInstance = null;
 let chartFinanceiroInstance = null;
+let chartRadarInstance = null; // Declarar explicitamente
+let chartPesoDistribuicaoInstance = null; // Novo gráfico de rosca
 let editingId = null;
 let currentItens = []; // Keep track of items for easy editing
 
-// Configurar datas de hoje nos inputs
+// Configurar datas de hoje e validade padrão (+30 dias) nos inputs
 const hoje = new Date().toISOString().split('T')[0];
+const dataPadraoValidade = new Date();
+dataPadraoValidade.setDate(dataPadraoValidade.getDate() + 30);
+const hojeMais30 = dataPadraoValidade.toISOString().split('T')[0];
+
 document.getElementById('dataEntrada').value = hoje;
-document.getElementById('dataValidade').value = hoje;
+document.getElementById('dataValidade').value = hojeMais30;
 
 // ==========================================
 // 1. AUTHENTICATION (Login / Cadastro explícito)
@@ -300,7 +306,7 @@ formCadastro.addEventListener('submit', async (e) => {
     const entrada = document.getElementById('dataEntrada').value;
     const validade = document.getElementById('dataValidade').value;
     const precoTotal = parseFloat(document.getElementById('preco').value);
-    const precoUnitario = precoTotal / quantidade;
+    const precoUnitario = precoTotal; // Agora trata como unitário direto conforme o label
     
     try {
         const estoqueRef = collection(db, "estoque");
@@ -337,7 +343,7 @@ formCadastro.addEventListener('submit', async (e) => {
         
         formCadastro.reset();
         document.getElementById('dataEntrada').value = hoje;
-        document.getElementById('dataValidade').value = hoje;
+        document.getElementById('dataValidade').value = hojeMais30;
         document.getElementById('nome').focus();
         
         setTimeout(() => carregarEstoque(), 500);
@@ -452,8 +458,10 @@ function atualizarAnalytics(itens) {
     // Atualizar no HTML as métricas numéricas
     document.getElementById('metricValorInvestido').textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('metricTotalUnidades').textContent = itens.length;
-    // KPI "Itens em Atenção" -> Atualiza visual e label se quiser depois, mas o valor é crítico (<15 dias)
     document.getElementById('metricItensAtencao').textContent = itensCriticos15Dias;
+
+    // Chamar geração de dashboards complexos
+    gerarDashboard(itensAgrupados, itens);
 
     // --- GRÁFICOS ANTIGOS (Mantidos e Melhorados) ---
     // 2. Gráfico 1: Prazos de Validade (Visão Agrupada x Dias pra vencer)
@@ -537,7 +545,8 @@ function atualizarAnalytics(itens) {
     // --- LÓGICA DOS WIDGETS INTELIGENTES ---
     
     // WIDGET 2: Carga Física Bruta
-    document.getElementById('pesoTotalEstoque').textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
+    const elPeso = document.getElementById('pesoTotalInfo');
+    if (elPeso) elPeso.textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
 
     // WIDGET 1: Calculadora de Autonomia
     // WIDGET 1: Calculadora de Autonomia
@@ -654,9 +663,8 @@ function atualizarAnalytics(itens) {
     }
 
     // --- NOVOS GRÁFICOS (Financeiro e Radar) ---
-    function gerarDashboard() {
-        // 4. Gráfico 3 (Financeiro): Valor Financeiro por Item/Categoria (Doughnut)
-        // Ordena pelo item mais caro no total para o gráfico ficar bonito
+    function gerarDashboard(itensAgrupados, itens) {
+        // 4. Gráfico 3 (Financeiro): Valor Financeiro por Item/Categoria (Linha)
         const dadosFinanceiros = Object.values(itensAgrupados).sort((a,b) => b.custoTotal - a.custoTotal);
         const labelsFinanceiro = dadosFinanceiros.map(u => u.nome);
         const dataFinanceiro = dadosFinanceiros.map(u => Number(u.custoTotal.toFixed(2)));
@@ -727,32 +735,47 @@ function atualizarAnalytics(itens) {
             }
         });
 
-        if (chartRadarInstance) chartRadarInstance.destroy();
+            }
+        });
 
-        const ctxRadar = document.getElementById('radarChart').getContext('2d');
-        chartRadarInstance = new Chart(ctxRadar, {
-            type: 'bar',
+        // 6. Gráfico de Rosca de Peso (NOVO PEDIDO PELO USUÁRIO)
+        const dadosPeso = Object.values(itensAgrupados)
+            .map(u => {
+                let p = Number(u.pesoTotal);
+                if (u.unidade === 'g' || u.unidade === 'ml') p /= 1000;
+                return { nome: u.nome, peso: p };
+            })
+            .sort((a,b) => b.peso - a.peso)
+            .slice(0, 8); // Top 8 produtos em peso
+
+        const labelsPeso = dadosPeso.map(u => u.nome);
+        const dataPeso = dadosPeso.map(u => Number(u.peso.toFixed(2)));
+
+        if (chartPesoDistribuicaoInstance) chartPesoDistribuicaoInstance.destroy();
+
+        const ctxPeso = document.getElementById('chartPesoDistribuicao').getContext('2d');
+        chartPesoDistribuicaoInstance = new Chart(ctxPeso, {
+            type: 'doughnut',
             data: {
-                labels: ['< 15 dias', '15 a 30 dias', '> 30 dias'],
+                labels: labelsPeso,
                 datasets: [{
-                    label: 'Itens em Estoque',
-                    data: [contagemVence15, contagemVence30, contagemVenceBom],
-                    backgroundColor: ['#FF3B30', '#FFCC00', '#34C759'], // Vermelho, Amarelo, Verde iOS
-                    borderRadius: 4
+                    data: dataPeso,
+                    backgroundColor: [
+                        '#FF9500', '#FF2D55', '#AF52DE', '#007AFF', '#5856D6', '#34C759', '#FFCC00', '#8E8E93'
+                    ],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '70%',
                 plugins: {
-                    title: { display: true, text: 'Radar Geral de Validades (Unidades)' },
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 10 } }
+                    },
+                    title: { display: false }
                 }
             }
         });
