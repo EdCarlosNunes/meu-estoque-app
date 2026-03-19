@@ -1,0 +1,25 @@
+{
+  "name": "Meu Estoque Inteligente",
+  "short_name": "Estoque",
+  "description": "Gestão inteligente do seu estoque alimentar",
+  "start_url": "/meu-estoque-app/",
+  "scope": "/meu-estoque-app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f5f7",
+  "theme_color": "#0A84FF",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

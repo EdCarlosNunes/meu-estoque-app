@@ -3,11 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Banco de Dados de Comida</title>
-    <link rel="icon" href="apple.svg" type="image/svg+xml">
+    <title>Meu Estoque Inteligente</title>
+
+    <!-- PWA: Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- PWA: iOS (Safari) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Estoque">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- PWA: Theme Color (barra do navegador Android) -->
+    <meta name="theme-color" content="#0A84FF">
+    <meta name="description" content="Gestão inteligente do seu estoque alimentar">
+
+    <!-- Ícone e CSS -->
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
     <link rel="stylesheet" href="style.css?v=20">
+
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PWA: Registro do Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/meu-estoque-app/sw.js')
+                    .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
+                    .catch(err => console.warn('⚠️ SW falhou:', err));
+            });
+        }
+    </script>
 </head>
 <body>
     <!-- Fundo abstrato estilo iOS -->
