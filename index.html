@@ -20,7 +20,7 @@
 
     <!-- Ícone e CSS -->
     <link rel="icon" href="icons/icon-192.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
 
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -363,6 +363,94 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=20"></script>
+    <!-- BOTTOM TAB BAR (Mobile apenas) -->
+    <nav class="mobile-tab-bar" id="mobileTabBar">
+        <button class="tab-item active" data-tab="estoque" id="tabEstoque">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Estoque</span>
+        </button>
+        <button class="tab-item" data-tab="adicionar" id="tabAdicionar">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span>Adicionar</span>
+        </button>
+        <button class="tab-item" data-tab="analytics" id="tabAnalytics">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Análises</span>
+        </button>
+    </nav>
+
+    <script type="module" src="script.js?v=21"></script>
+
+    <!-- Mobile Tab Navigation Logic -->
+    <script>
+    (function() {
+        const tabBar = document.getElementById('mobileTabBar');
+        if (!tabBar) return;
+
+        // Mapeia tab -> seletor do painel
+        const tabMap = {
+            estoque:   '.table-panel',
+            adicionar: '.form-panel',
+            analytics: '#analyticsPanel'
+        };
+
+        function isMobile() { return window.innerWidth <= 768; }
+
+        function ativarTab(tabName) {
+            if (!isMobile()) return;
+
+            // Botões
+            tabBar.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+            const btn = tabBar.querySelector(`[data-tab="${tabName}"]`);
+            if (btn) btn.classList.add('active');
+
+            // Painéis
+            const formPanel   = document.querySelector('.form-panel');
+            const tablePanel  = document.querySelector('.table-panel');
+            const analyticsP  = document.getElementById('analyticsPanel');
+
+            [formPanel, tablePanel, analyticsP].forEach(p => {
+                if (p) p.classList.remove('tab-active');
+            });
+
+            const targetSelector = tabMap[tabName];
+            const target = document.querySelector(targetSelector);
+            if (target) target.classList.add('tab-active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        tabBar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.tab-item');
+            if (btn) ativarTab(btn.getAttribute('data-tab'));
+        });
+
+        // Ao carregar no mobile, mostra a aba Estoque por padrão
+        function setupMobile() {
+            if (isMobile()) {
+                setTimeout(() => ativarTab('estoque'), 300);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (!isMobile()) {
+                // Remove classes mobile ao voltar para desktop
+                document.querySelectorAll('.tab-active').forEach(p => p.classList.remove('tab-active'));
+            } else {
+                setupMobile();
+            }
+        });
+
+        // Observa quando o appContainer aparece (login completed)
+        const observer = new MutationObserver(() => {
+            const app = document.getElementById('appContainer');
+            if (app && app.style.display !== 'none') {
+                setupMobile();
+            }
+        });
+        const app = document.getElementById('appContainer');
+        if (app) observer.observe(app, { attributes: true, attributeFilter: ['style'] });
+    })();
+    </script>
 </body>
 </html>

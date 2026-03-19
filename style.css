@@ -940,57 +940,96 @@ input:focus {
     .charts-grid { grid-template-columns: 1fr; }
 }
 
+
+/* =========================================
+   MOBILE APP-LIKE LAYOUT (≤ 768px)
+   ========================================= */
+
+/* ---- BOTTOM TAB BAR ---- */
+.mobile-tab-bar {
+    display: none; /* Oculto no desktop */
+}
+
 @media (max-width: 768px) {
-    /* 1. Reset de Largura e Overflow */
-    * { 
-        box-sizing: border-box !important; 
+
+    /* == BASE == */
+    html, body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
     }
-    
-    body, html { 
-        width: 100%; 
-        max-width: 100%; 
-        overflow-x: hidden; 
-        margin: 0; 
-        padding: 0; 
+
+    body {
+        padding: 0 0 80px 0; /* Espaço para a tab bar */
+        padding-bottom: calc(70px + env(safe-area-inset-bottom));
     }
 
     .container {
         width: 100%;
-        padding: 10px;
-        margin: 0; 
+        padding: 10px 12px;
+        margin: 0;
     }
 
-    /* 2. Cabeçalho (.app-nav) */
+    /* == HEADER COMPACTO == */
     .app-nav {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 15px;
-    }
-
-    .user-controls {
-        width: 100%;
+        flex-direction: row;
+        align-items: center;
         justify-content: space-between;
+        padding: 12px 16px;
+        margin-bottom: 0;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
-    .user-badge-wrapper {
-        max-width: calc(100% - 45px); /* Espaço para o botão sair */
-        overflow: hidden;
-    }
+    .nav-brand h1 { font-size: 1.05rem; }
+    .brand-icon { font-size: 1.2rem; }
 
     .user-badge {
-        max-width: 100%;
+        max-width: 150px;
+        font-size: 0.75rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         display: inline-block;
     }
 
-    /* 3. Formulário "+ Novo Item" */
+    /* == LAYOUT DE ABAS == */
+    .split-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    /* No mobile, todos os painéis ficam ocultos por padrão */
+    .form-panel,
+    .table-panel,
+    #analyticsPanel {
+        display: none !important;
+        width: 100%;
+        border-radius: var(--radius-lg);
+        margin-top: 10px;
+    }
+
+    /* Só o painel com .tab-active aparece */
+    .form-panel.tab-active,
+    .table-panel.tab-active,
+    #analyticsPanel.tab-active {
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    /* == FORMULÁRIO == */
+    .form-panel.tab-active {
+        padding: 20px 16px;
+    }
+
     .form-row {
         flex-direction: column;
-        width: 100%;
-        gap: 15px;
+        gap: 0;
     }
 
     .form-row .form-group {
@@ -998,30 +1037,166 @@ input:focus {
         min-width: 100%;
     }
 
-    input, select {
-        width: 100%;
+    input, select { width: 100%; }
+
+    /* == TABELA / ESTOQUE == */
+    .table-panel.tab-active {
+        padding: 16px 12px;
     }
 
-    /* 4. Tabela "Estoque Atual" */
+    /* Tabela vira cards empilhados no mobile */
     .table-container {
         width: 100%;
-        overflow-x: auto;
+        overflow-x: visible;
+        max-height: none;
     }
 
-    /* Ajustes Gerais */
+    .ios-table thead { display: none; } /* Esconde cabeçalho */
+
+    .ios-table tbody tr {
+        display: flex;
+        flex-direction: column;
+        background: rgba(255,255,255,0.7);
+        border-radius: var(--radius-sm);
+        padding: 14px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .ios-table td {
+        background: transparent !important;
+        padding: 3px 0;
+        font-size: 0.9rem;
+        border-radius: 0;
+    }
+
+    /* Labels pseudo para cada célula */
+    .ios-table td:nth-child(1)::before { content: "📦 "; font-weight: 800; }
+    .ios-table td:nth-child(2)::before { content: "⚖️ "; color: var(--label-secondary); }
+    .ios-table td:nth-child(3)::before { content: "📅 "; color: var(--label-secondary); }
+    .ios-table td:nth-child(4)::before { content: "💰 "; color: var(--label-secondary); }
+    .ios-table td:nth-child(6) {
+        padding-top: 10px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        margin-top: 6px;
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .table-actions .btn-glass {
+        flex: 1;
+        justify-content: center;
+        padding: 10px;
+        font-size: 0.82rem;
+    }
+
+    /* Filtros em mobile */
+    .filter-bar {
+        gap: 6px;
+        padding: 8px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-label { display: none; }
+
+    /* == ANALYTICS == */
+    #analyticsPanel.tab-active {
+        padding: 16px 12px;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .metric-card {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .metric-data p { font-size: 1.3rem; }
+    .metric-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .smart-widgets-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* == AUTH == */
     .auth-panel {
-        width: 90%;
+        width: 92%;
         max-width: 400px;
         margin: 0 auto;
-        padding: 15px;
+        padding: 20px 16px;
     }
 
-    .panel { 
-        padding: 15px; 
+    /* == BOTTOM TAB BAR == */
+    .mobile-tab-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(60px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-top: 1px solid rgba(0,0,0,0.1);
+        z-index: 1000;
+        justify-content: space-around;
+        align-items: center;
     }
 
-    .metrics-grid { 
-        grid-template-columns: 1fr; 
+    .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        flex: 1;
+        padding: 8px 4px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--label-tertiary);
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab-item span {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+
+    .tab-item svg {
+        transition: transform 0.2s var(--spring);
+    }
+
+    .tab-item.active {
+        color: var(--sys-blue);
+    }
+
+    .tab-item.active svg {
+        transform: scale(1.15);
+    }
+
+    /* Tabela header panel row for mobile exports */
+    .table-panel-header {
+        flex-wrap: wrap;
+        gap: 10px;
     }
 }
 
