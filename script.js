@@ -209,41 +209,85 @@ async function carregarEstoque() {
         } else {
             loadingState.style.display = 'none';
             tableContainer.style.display = 'block';
-            analyticsPanel.style.display = 'block'; // Mostrar gráficos
+            analyticsPanel.style.display = 'block';
             
-            currentItens = itens; // Guardar para edição
+            currentItens = itens;
 
-            itens.forEach(item => {
-                const tr = document.createElement('tr');
-                const status = classificarStatus(item.validade);
+            // Estado atual do filtro (default: validade)
+            let sortAtual = document.querySelector('.btn-filter.active')?.getAttribute('data-sort') || 'validade';
 
-                tr.innerHTML = `
-                    <td><strong>${item.nome}</strong></td>
-                    <td>${item.peso} ${item.unidade || 'Kg'}</td>
-                    <td>${formataDataBR(item.validade)}</td>
-                    <td>R$ ${Number(item.precoUnitario).toFixed(2).replace('.', ',')}</td>
-                    <td><span class="badge ${status.classe}">${status.texto}</span></td>
-                    <td>
-                        <div class="table-actions">
-                            <button class="btn-glass btn-glass-blue btn-edit" data-id="${item.id}">
-                                ✏️ Ajustar
-                            </button>
-                            <button class="btn-glass btn-glass-green btn-consume" data-id="${item.id}">
-                                🍽️ Consumir
-                            </button>
-                        </div>
-                    </td>
-                `;
-                estoqueBody.appendChild(tr);
-            });
+            // Função que renderiza a tabela com a ordenação atual
+            function renderizarTabela(listaItens) {
+                estoqueBody.innerHTML = '';
+                listaItens.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const status = classificarStatus(item.validade);
+                    tr.innerHTML = `
+                        <td><strong>${item.nome}</strong></td>
+                        <td>${item.peso} ${item.unidade || 'Kg'}</td>
+                        <td>${formataDataBR(item.validade)}</td>
+                        <td>R$ ${Number(item.precoUnitario).toFixed(2).replace('.', ',')}</td>
+                        <td><span class="badge ${status.classe}">${status.texto}</span></td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-glass btn-glass-blue btn-edit" data-id="${item.id}">
+                                    ✏️ Ajustar
+                                </button>
+                                <button class="btn-glass btn-glass-green btn-consume" data-id="${item.id}">
+                                    🍽️ Consumir
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    estoqueBody.appendChild(tr);
+                });
 
-            document.querySelectorAll('.btn-edit').forEach(btn => {
-                btn.addEventListener('click', (e) => ajustarItem(e.currentTarget.getAttribute('data-id')));
-            });
+                document.querySelectorAll('.btn-edit').forEach(btn => {
+                    btn.addEventListener('click', (e) => ajustarItem(e.currentTarget.getAttribute('data-id')));
+                });
+                document.querySelectorAll('.btn-consume').forEach(btn => {
+                    btn.addEventListener('click', (e) => removerItem(e.currentTarget.getAttribute('data-id')));
+                });
+            }
 
-            document.querySelectorAll('.btn-consume').forEach(btn => {
-                btn.addEventListener('click', (e) => removerItem(e.currentTarget.getAttribute('data-id')));
-            });
+            // Função de ordenação
+            function ordenarItens(lista, criterio) {
+                const copia = [...lista];
+                switch(criterio) {
+                    case 'preco-asc':  return copia.sort((a,b) => Number(a.precoUnitario) - Number(b.precoUnitario));
+                    case 'preco-desc': return copia.sort((a,b) => Number(b.precoUnitario) - Number(a.precoUnitario));
+                    case 'quantidade': // Agrupa por nome e ordena pelo grupo com mais itens
+                        const contagem = {};
+                        lista.forEach(i => { const k = i.nome.toUpperCase(); contagem[k] = (contagem[k]||0)+1; });
+                        return copia.sort((a,b) => (contagem[b.nome.toUpperCase()]||0) - (contagem[a.nome.toUpperCase()]||0));
+                    case 'az':         return copia.sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+                    default:           return copia.sort((a,b) => new Date(a.validade) - new Date(b.validade));
+                }
+            }
+
+            // Render inicial com o filtro já ativo
+            renderizarTabela(ordenarItens(itens, sortAtual));
+
+            // Listeners dos botões de filtro
+            const filterBar = document.getElementById('filterBar');
+            if (filterBar) {
+                // Remove listeners antigos clonando o elemento
+                const novaFilterBar = filterBar.cloneNode(true);
+                filterBar.parentNode.replaceChild(novaFilterBar, filterBar);
+
+                novaFilterBar.addEventListener('click', (e) => {
+                    const btnClicado = e.target.closest('.btn-filter');
+                    if (!btnClicado) return;
+
+                    // Atualiza estado visual
+                    novaFilterBar.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+                    btnClicado.classList.add('active');
+
+                    // Re-renderiza com nova ordenação
+                    const novoSort = btnClicado.getAttribute('data-sort');
+                    renderizarTabela(ordenarItens(itens, novoSort));
+                });
+            }
 
             // Rodar as análises assim que carregar!
             atualizarAnalytics(itens);
@@ -253,6 +297,7 @@ async function carregarEstoque() {
         loadingState.innerHTML = `<p style="color:red">Ocorreu um problema ao baixar. Tentando novamente...</p>`;
     }
 }
+
 
 // ==========================================
 // FUNÇÃO DE EXPORTAÇÃO CSV

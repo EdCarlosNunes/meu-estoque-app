@@ -1024,3 +1024,54 @@ input:focus {
         grid-template-columns: 1fr; 
     }
 }
+
+/* =========================================
+   BARRA DE FILTROS / ORDENAÇÃO DA TABELA
+   ========================================= */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    background: rgba(118, 118, 128, 0.08);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.filter-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--label-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 4px;
+}
+
+.btn-filter {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.6);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--label-secondary);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+    white-space: nowrap;
+}
+
+.btn-filter:hover {
+    background: rgba(255,255,255,0.9);
+    color: var(--sys-blue);
+    border-color: rgba(10, 132, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-filter.active {
+    background: var(--sys-blue);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.35);
+}

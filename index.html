@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Banco de Dados de Comida</title>
     <link rel="icon" href="apple.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
     <!-- Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -147,7 +147,16 @@
                             Exportar CSV
                         </button>
                     </div>
-                    
+                    <!-- Barra de Filtros -->
+                    <div class="filter-bar" id="filterBar">
+                        <span class="filter-label">Ordenar:</span>
+                        <button class="btn-filter active" data-sort="validade" id="filterValidade">📅 Validade</button>
+                        <button class="btn-filter" data-sort="preco-asc" id="filterPrecoAsc">💰 Menor Preço</button>
+                        <button class="btn-filter" data-sort="preco-desc" id="filterPrecoDesc">💸 Maior Preço</button>
+                        <button class="btn-filter" data-sort="quantidade" id="filterQtd">📦 Mais Itens</button>
+                        <button class="btn-filter" data-sort="az" id="filterAZ">🔤 A → Z</button>
+                    </div>
+
                     <div id="loadingState" class="empty-state">
                         <div class="spinner"></div>
                         <p>Sincronizando com a nuvem...</p>
@@ -327,6 +336,6 @@
         </main>
     </div>
 
-    <script type="module" src="script.js?v=19"></script>
+    <script type="module" src="script.js?v=20"></script>
 </body>
 </html>
