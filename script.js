@@ -460,8 +460,6 @@ function atualizarAnalytics(itens) {
     document.getElementById('metricTotalUnidades').textContent = itens.length;
     document.getElementById('metricItensAtencao').textContent = itensCriticos15Dias;
 
-    // Chamar geração de dashboards complexos
-    gerarDashboard(itensAgrupados, itens);
 
     // --- GRÁFICOS ANTIGOS (Mantidos e Melhorados) ---
     // 2. Gráfico 1: Prazos de Validade (Visão Agrupada x Dias pra vencer)
@@ -543,10 +541,7 @@ function atualizarAnalytics(itens) {
     });
 
     // --- LÓGICA DOS WIDGETS INTELIGENTES ---
-    
-    // WIDGET 2: Carga Física Bruta
-    const elPeso = document.getElementById('pesoTotalInfo');
-    if (elPeso) elPeso.textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
+
 
     // WIDGET 1: Calculadora de Autonomia
     // WIDGET 1: Calculadora de Autonomia
@@ -663,7 +658,7 @@ function atualizarAnalytics(itens) {
     }
 
     // --- NOVOS GRÁFICOS (Financeiro e Radar) ---
-    function gerarDashboard(itensAgrupados, itens) {
+    function gerarDashboard() {
         // 4. Gráfico 3 (Financeiro): Valor Financeiro por Item/Categoria (Linha)
         const dadosFinanceiros = Object.values(itensAgrupados).sort((a,b) => b.custoTotal - a.custoTotal);
         const labelsFinanceiro = dadosFinanceiros.map(u => u.nome);
@@ -671,114 +666,124 @@ function atualizarAnalytics(itens) {
 
         if (chartFinanceiroInstance) chartFinanceiroInstance.destroy();
 
-        const ctxFin = document.getElementById('financeiroChart').getContext('2d');
-        chartFinanceiroInstance = new Chart(ctxFin, {
-            type: 'line', // Mudou de doughnut para linha com pontos
-            data: {
-                labels: labelsFinanceiro,
-                datasets: [{
-                    label: 'Investimento (R$)',
-                    data: dataFinanceiro,
-                    backgroundColor: '#FF2D55', // Rosa Apple
-                    borderColor: '#FF2D55',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#FF2D55',
-                    pointBorderWidth: 3,
-                    pointRadius: 6, // Pontos bem visíveis
-                    pointHoverRadius: 8,
-                    fill: true, // Preenche a área do gráfico
-                    backgroundColor: 'rgba(255, 45, 85, 0.1)', // Rosa translúcido no fundo
-                    tension: 0.3 // Deixa a linha levemente curva
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: 'Pico de Custo: Produtos Mais Caros (Total R$)' },
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
-                            }
-                        }
-                    }
+        const ctxFin = document.getElementById('financeiroChart');
+        if (ctxFin) {
+            chartFinanceiroInstance = new Chart(ctxFin.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labelsFinanceiro,
+                    datasets: [{
+                        label: 'Investimento (R$)',
+                        data: dataFinanceiro,
+                        borderColor: '#FF2D55',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#FF2D55',
+                        pointBorderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        fill: true,
+                        backgroundColor: 'rgba(255, 45, 85, 0.1)',
+                        tension: 0.3
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'R$ ' + value;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Pico de Custo: Produtos Mais Caros (Total R$)' },
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                                }
                             }
                         }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v } }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // 5. Gráfico 4 (Radar/Bar): Radar de Validade (Bar Chart - Agrupado em 3 buckets)
-        let contagemVence15 = 0;   // < 15 dias (Alerta Vermelho)
-        let contagemVence30 = 0;   // 15 a 30 dias (Alerta Amarelo)
-        let contagemVenceBom = 0;  // > 30 dias (Verde)
+        // 5. Gráfico Radar de Validade
+        let contagemVence15 = 0;
+        let contagemVence30 = 0;
+        let contagemVenceBom = 0;
 
         itens.forEach(item => {
-            const diasParaVencer = classificarStatus(item.validade).dias;
-            if (diasParaVencer < 15) {
-                contagemVence15++;
-            } else if (diasParaVencer >= 15 && diasParaVencer <= 30) {
-                contagemVence30++;
-            } else {
-                contagemVenceBom++;
-            }
+            const dias = classificarStatus(item.validade).dias;
+            if (dias < 15) contagemVence15++;
+            else if (dias <= 30) contagemVence30++;
+            else contagemVenceBom++;
         });
 
-            }
-        });
+        if (chartRadarInstance) chartRadarInstance.destroy();
+        const ctxRadar = document.getElementById('radarChart');
+        if (ctxRadar) {
+            chartRadarInstance = new Chart(ctxRadar.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['< 15 dias', '15 a 30 dias', '> 30 dias'],
+                    datasets: [{
+                        label: 'Itens em Estoque',
+                        data: [contagemVence15, contagemVence30, contagemVenceBom],
+                        backgroundColor: ['#FF3B30', '#FFCC00', '#34C759'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Radar Geral de Validades (Unidades)' },
+                        legend: { display: false }
+                    },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
 
-        // 6. Gráfico de Rosca de Peso (NOVO PEDIDO PELO USUÁRIO)
+        // 6. Gráfico de Rosca de Distribuição de Peso ⚖️
         const dadosPeso = Object.values(itensAgrupados)
             .map(u => {
                 let p = Number(u.pesoTotal);
                 if (u.unidade === 'g' || u.unidade === 'ml') p /= 1000;
                 return { nome: u.nome, peso: p };
             })
+            .filter(u => u.peso > 0)
             .sort((a,b) => b.peso - a.peso)
-            .slice(0, 8); // Top 8 produtos em peso
+            .slice(0, 8);
 
         const labelsPeso = dadosPeso.map(u => u.nome);
         const dataPeso = dadosPeso.map(u => Number(u.peso.toFixed(2)));
 
         if (chartPesoDistribuicaoInstance) chartPesoDistribuicaoInstance.destroy();
-
-        const ctxPeso = document.getElementById('chartPesoDistribuicao').getContext('2d');
-        chartPesoDistribuicaoInstance = new Chart(ctxPeso, {
-            type: 'doughnut',
-            data: {
-                labels: labelsPeso,
-                datasets: [{
-                    data: dataPeso,
-                    backgroundColor: [
-                        '#FF9500', '#FF2D55', '#AF52DE', '#007AFF', '#5856D6', '#34C759', '#FFCC00', '#8E8E93'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { boxWidth: 10, font: { size: 10 } }
-                    },
-                    title: { display: false }
+        const ctxPeso = document.getElementById('chartPesoDistribuicao');
+        if (ctxPeso && dataPeso.length > 0) {
+            chartPesoDistribuicaoInstance = new Chart(ctxPeso.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labelsPeso,
+                    datasets: [{
+                        data: dataPeso,
+                        backgroundColor: ['#FF9500', '#FF2D55', '#AF52DE', '#007AFF', '#5856D6', '#34C759', '#FFCC00', '#8E8E93'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                        title: { display: false }
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     // --- LÓGICA: PAINEL DE METAS EXTREMO ---
@@ -950,4 +955,8 @@ function atualizarAnalytics(itens) {
 
     // Chama a função que gera e injeta os novos gráficos gerenciais
     gerarDashboard();
+
+    // Atualiza o peso total exibido
+    const elPeso = document.getElementById('pesoTotalInfo');
+    if (elPeso) elPeso.textContent = pesoFisicoTotal.toFixed(1).replace('.', ',');
 }
